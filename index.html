@@ -9,9 +9,33 @@
   <body>
     <div id="app" class="bg-gray-900 h-screen w-screen overflow-hidden">
       <div id="toolbar" class="fixed top-0 left-0 bg-gray-900 p-2 flex space-x-2 w-screen">
-        <button id="lineTool" class="text-gray-400">Line Tool</button>
-        <button id="rectTool" class="text-gray-400">Rectangle Tool</button>
-        <button id="circleTool" class="text-gray-400">Circle Tool</button>
+        <button id="pencilTool">
+          <img 
+            src="src/assests/pencil-tool-icon.svg" 
+            alt="Narzędzie Ołówek" 
+            class="w-10 h-10"
+          />
+        <button id="lineTool">
+          <img 
+            src="src/assests/line-tool-icon.svg" 
+            alt="Narzędzie Linia" 
+            class="w-10 h-10"
+          />  
+        </button>
+        <button id="rectTool">
+          <img 
+            src="src/assests/rectangle-tool-icon.svg" 
+            alt="Narzędzie Prostokąt" 
+            class="w-10 h-10"
+          />  
+        </button>
+        <button id="circleTool">
+          <img 
+            src="src/assests/circle-tool-icon.svg" 
+            alt="Narzędzie Koło" 
+            class="w-10 h-10"
+          />
+        </button>
         <input type="color" id="colorPicker" class="ml-4" value="#000000" />
       </div>
       <canvas id="maincanvas" width="800" height="600"></canvas>
