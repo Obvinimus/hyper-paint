@@ -1,7 +1,15 @@
 import './main.ts'
-import { mode } from './main.ts';
+import { mode, currentColor } from './main.ts';
 
-let lines: number[][] = [];
+export interface Line {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  color: string;
+}
+
+let lines: Line[] = [];
 export let isDrawing = false;
 export let startX = 0;
 export let startY = 0;
@@ -21,14 +29,21 @@ export function setupLineDrawing(canvas: HTMLCanvasElement) {
         const rect = canvas.getBoundingClientRect();
         endX = event.clientX - rect.left;
         endY = event.clientY - rect.top;
-        let newline = [startX, startY, endX, endY];
+        let newline:Line = {
+            x1: startX,
+            y1: startY,
+            x2: endX,
+            y2: endY,
+            color: currentColor
+        }
+        
         lines.push(newline);
         isDrawing = false;
     }
   });
 }
 
-export function getLines(): number[][] {
+export function getLines(): Line[] {
   return lines; 
 }
 
