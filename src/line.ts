@@ -1,12 +1,26 @@
 import './main.ts'
-import { mode, currentColor } from './main.ts';
+import { mode, currentColor } from './state.ts';
 
-export interface Line {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  color: string;
+export class Line {
+    public x1: number;
+    public y1: number;
+    public x2: number;
+    public y2: number;
+    public color: string;
+
+    constructor(
+        x1: number,
+        y1: number,
+        x2: number,
+        y2: number,
+        color: string
+    ) {
+        this.x1 = x1;
+        this.y1 = y1;
+        this.x2 = x2;
+        this.y2 = y2;
+        this.color = color;
+    }
 }
 
 let lines: Line[] = [];
