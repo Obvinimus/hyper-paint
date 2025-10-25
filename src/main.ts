@@ -1,5 +1,5 @@
 import './style.css'
-import './line.ts'
+import { getLines, setupLineDrawing, drawLineBresenham } from './line.ts';
 import { setupPixelDrawing } from './pentool.ts';
 import { mode, currentColor, setColor, setMode } from './state.ts';
 
@@ -45,18 +45,35 @@ document.getElementById('pencilTool')?.addEventListener('click', () => {
 function init() {
   canvas = document.getElementById('maincanvas') as HTMLCanvasElement;
   graphics = canvas.getContext('2d');
-  imageData = graphics?.getImageData(0, 0, canvas.width, canvas.height);
-  data = imageData?.data;
-  mousePos(canvas);
-  if(mode == 3){
-    if (!graphics || !canvas) return;
-    setupPixelDrawing(canvas, graphics, imageData!);
+  
+  if (graphics) {
+      imageData = graphics.createImageData(canvas.width, canvas.height);
+      data = imageData.data;
   }
+  
+  mousePos(canvas);
+
+  if (!graphics || !canvas || !imageData) return; 
+
+  setupPixelDrawing(canvas, graphics, imageData);
+  setupLineDrawing(canvas, imageData); 
+
   draw();
 }
 
 function draw(){
+  if (!graphics || !canvas || !imageData) return;
+  drawLines();
+  graphics.putImageData(imageData, 0, 0);
   requestAnimationFrame(draw);
-} 
+}
+
+function drawLines(){
+  const lines = getLines();
+  for (const line of lines) {
+    drawLineBresenham(line.x1, line.y1, line.x2, line.y2, canvas!, imageData!.data, line.color);
+  }
+}
+
 
 window.onload = init;

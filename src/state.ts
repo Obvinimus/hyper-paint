@@ -1,4 +1,5 @@
-export let currentColor: string = "#ff0000"; 
+export let currentColor: string = "#ff0000";
+
 
 export let mode: number = 3; 
 
