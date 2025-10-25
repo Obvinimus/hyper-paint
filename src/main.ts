@@ -2,6 +2,7 @@ import './style.css'
 import { getLines, setupLineDrawing, drawLineBresenham } from './line.ts';
 import { setupPixelDrawing } from './pentool.ts';
 import { mode, currentColor, setColor, setMode } from './state.ts';
+import { setupRectangleDrawing, getRectangles } from './rectangle.ts';
 
 let graphics: CanvasRenderingContext2D | null;
 let canvas: HTMLCanvasElement | null;
@@ -57,6 +58,7 @@ function init() {
 
   setupPixelDrawing(canvas, graphics, imageData);
   setupLineDrawing(canvas, imageData); 
+  setupRectangleDrawing(canvas, imageData);
 
   draw();
 }
@@ -75,5 +77,14 @@ function drawLines(){
   }
 }
 
+function drawRectangles(){
+  const rectangles = getRectangles();
+  for (const rect of rectangles) {
+    drawLineBresenham(rect.left.x1, rect.left.y1, rect.left.x2, rect.left.y2, canvas!, imageData!.data, rect.left.color);
+    drawLineBresenham(rect.right.x1, rect.right.y1, rect.right.x2, rect.right.y2, canvas!, imageData!.data, rect.right.color);
+    drawLineBresenham(rect.top.x1, rect.top.y1, rect.top.x2, rect.top.y2, canvas!, imageData!.data, rect.top.color);
+    drawLineBresenham(rect.bottom.x1, rect.bottom.y1, rect.bottom.x2, rect.bottom.y2, canvas!, imageData!.data, rect.bottom.color);
+  }
+}
 
 window.onload = init;
