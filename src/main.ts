@@ -1,8 +1,9 @@
 import './style.css'
 import { getLines, setupLineDrawing, drawLineBresenham } from './line.ts';
 import { setupPixelDrawing } from './pentool.ts';
-import { mode, currentColor, setColor, setMode } from './state.ts';
+import { setColor, setMode } from './state.ts';
 import { setupRectangleDrawing, getRectangles } from './rectangle.ts';
+import { setupCircleDrawing } from './circle.ts';
 
 let graphics: CanvasRenderingContext2D | null;
 let canvas: HTMLCanvasElement | null;
@@ -59,6 +60,7 @@ function init() {
   setupPixelDrawing(canvas, graphics, imageData);
   setupLineDrawing(canvas, imageData); 
   setupRectangleDrawing(canvas, imageData);
+  setupCircleDrawing(canvas, imageData);
 
   draw();
 }
@@ -66,6 +68,7 @@ function init() {
 function draw(){
   if (!graphics || !canvas || !imageData) return;
   drawLines();
+  drawRectangles();
   graphics.putImageData(imageData, 0, 0);
   requestAnimationFrame(draw);
 }
