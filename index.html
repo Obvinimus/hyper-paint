@@ -45,11 +45,75 @@
       </div>
       <canvas id="maincanvas" width="1280" height="860"></canvas>
       <div id="fileToolbar" class="fixed bottom-0 left-0 bg-gray-900 p-2 flex space-x-2 v-screen">
-        <button id="saveButton" title="Zapisz">Zapisz</button>
+        <button id="saveButton" title="Zapisz" class="text-amber-50">Zapisz</button>
         <input type="file" id="loadInput" accept=".json" style="display: none;" />
-        <button id="loadButton" title="Wczytaj">Wczytaj</button>
-      </div>
+        <button id="loadButton" title="Wczytaj" class="text-amber-50">Wczytaj</button>
+        <div id="properties-panel" 
+     class="fixed top-0 right-0 h-full w-64 bg-gray-100 p-4 shadow-lg border-l border-gray-300 transform translate-x-full transition-transform z-10">
+    
+    <h3 class="text-lg font-bold mb-4">Właściwości</h3>
 
+    <div id="no-selection" class="">
+        <p class="text-gray-500">Nic nie zaznaczono.</p>
+    </div>
+
+    <div id="line-props" class="hidden space-y-2">
+        <div>
+            <label class="block text-sm font-medium">Punkt 1 (X, Y)</label>
+            <div class="flex space-x-2">
+                <input type="number" id="line-x1" class="w-full p-1 border rounded">
+                <input type="number" id="line-y1" class="w-full p-1 border rounded">
+            </div>
+        </div>
+        <div>
+            <label class="block text-sm font-medium">Punkt 2 (X, Y)</label>
+            <div class="flex space-x-2">
+                <input type="number" id="line-x2" class="w-full p-1 border rounded">
+                <input type="number" id="line-y2" class="w-full p-1 border rounded">
+            </div>
+        </div>
+    </div>
+
+    <div id="rect-props" class="hidden space-y-2">
+        <div>
+            <label class="block text-sm font-medium">Pozycja (X, Y)</label>
+            <div class="flex space-x-2">
+                <input type="number" id="rect-x1" class="w-full p-1 border rounded">
+                <input type="number" id="rect-y1" class="w-full p-1 border rounded">
+            </div>
+        </div>
+        <div>
+            <label class="block text-sm font-medium">Rozmiar (Szer, Wys)</label>
+            <div class="flex space-x-2">
+                <input type="number" id="rect-width" class="w-full p-1 border rounded" min="0">
+                <input type="number" id="rect-height" class="w-full p-1 border rounded" min="0">
+            </div>
+        </div>
+    </div>
+
+    <div id="circle-props" class="hidden space-y-2">
+        <div>
+            <label class="block text-sm font-medium">Środek (X, Y)</label>
+            <div class="flex space-x-2">
+                <input type="number" id="circle-cx" class="w-full p-1 border rounded">
+                <input type="number" id="circle-cy" class="w-full p-1 border rounded">
+            </div>
+        </div>
+        <div>
+            <label class="block text-sm font-medium">Promień</label>
+            <input type="number" id="circle-radius" class="w-full p-1 border rounded" min="0">
+        </div>
+    </div>
+
+    <div id="common-props" class="hidden mt-4 space-y-2">
+        <div>
+            <label class="block text-sm font-medium">Kolor</label>
+            <input type="color" id="shape-color" class="w-full h-8 p-0 border-0 rounded">
+        </div>
+        <button id="updateButton" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+            Aktualizuj
+        </button>
+    </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -4,6 +4,7 @@ import { getRectangles } from "./rectangle";
 import { getLines } from "./line";
 import { getCircles } from "./circle";
 import { changePixelColor } from './pixel.ts';
+import { updatePropertiesPanel } from './properties.ts';
 
 export let selectedShape: any | null = null;
 let isDragging = false;
@@ -55,7 +56,7 @@ export function setupSelection(canvas: HTMLCanvasElement) {
             }
         }
 
-        selectedShape = null; // Wyczyść zaznaczenie, jeśli kliknięto obok
+        selectedShape = null; 
 
         for (const circle of getCircles().slice().reverse()) {
             if (circle.hitTest(x, y)) {
@@ -85,6 +86,7 @@ export function setupSelection(canvas: HTMLCanvasElement) {
             lastMouseX = x;
             lastMouseY = y;
         }
+        updatePropertiesPanel(selectedShape);
     });
 
     canvas.addEventListener('mousemove', (event) => {

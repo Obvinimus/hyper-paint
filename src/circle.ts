@@ -8,6 +8,7 @@ let isDrawing: boolean = false;
 let circles: Circle[] = [];
 
 export class Circle {
+    public readonly type = 'circle';
     centerX: number;
     centerY: number;
     radius: number;

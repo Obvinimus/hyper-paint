@@ -5,6 +5,7 @@ import { setupSelection, selectedShape, drawHandle } from './grabtool.ts';
 import { getLines, setupLineDrawing, drawLineBresenham, previewLine, setLines, Line } from './line.ts';
 import { setupRectangleDrawing, getRectangles, previewRect, setRectangles, Rectangle } from './rectangle.ts';
 import { setupCircleDrawing, getCircles, drawCircleMidpoint, previewCircle, setCircles, Circle } from './circle.ts';
+import { initPropertiesPanel } from './properties.ts';
 
 
 let graphics: CanvasRenderingContext2D | null;
@@ -68,6 +69,7 @@ function init() {
   setupRectangleDrawing(canvas);
   setupCircleDrawing(canvas);
   setupSelection(canvas);
+  initPropertiesPanel();
 
   document.getElementById('saveButton')?.addEventListener('click', saveDrawing);
   

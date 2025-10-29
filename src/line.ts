@@ -4,6 +4,7 @@ import { changePixelColor } from './pixel.ts';
 import type { Handle } from "./state";
 
 export class Line {
+    public readonly type = 'line';
     public x1: number;
     public y1: number;
     public x2: number;
