@@ -7,7 +7,7 @@ let startY: number;
 let isDrawing: boolean = false;
 let circles: Circle[] = [];
 
-class Circle {
+export class Circle {
     centerX: number;
     centerY: number;
     radius: number;
@@ -103,7 +103,9 @@ export function drawCircleMidpoint(centerX: number, centerY: number, radius: num
     }
 }
 
-export function setupCircleDrawing(canvas: HTMLCanvasElement, imageData: ImageData) {
+export let previewCircle: Circle | null = null;
+
+export function setupCircleDrawing(canvas: HTMLCanvasElement) {
     canvas.addEventListener('mousedown', (event) => {
         if (mode != 2) return; 
 
@@ -120,10 +122,27 @@ export function setupCircleDrawing(canvas: HTMLCanvasElement, imageData: ImageDa
             const dy = endY - startY;
             const radius = Math.sqrt(dx * dx + dy * dy);
             
-            drawCircleMidpoint(startX, startY, radius, canvas, imageData.data, currentColor);
             
             circles.push(new Circle(startX, startY, radius, currentColor));
+
+            previewCircle = null;
         }
+    });
+
+    canvas.addEventListener('mousemove', (event) => {
+        if (mode != 2 || isDrawing === false) {
+            previewCircle = null;
+            return;
+        }
+        
+        const currentX = event.offsetX;
+        const currentY = event.offsetY;
+        
+        const dx = currentX - startX;
+        const dy = currentY - startY;
+        const radius = Math.sqrt(dx * dx + dy * dy);
+
+        previewCircle = new Circle(startX, startY, radius, currentColor);
     });
 }
 

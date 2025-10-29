@@ -101,7 +101,9 @@ export class Rectangle {
     }
 }
 
-export function setupRectangleDrawing(canvas: HTMLCanvasElement, imageData: ImageData) {
+export let previewRect: Rectangle | null = null;
+
+export function setupRectangleDrawing(canvas: HTMLCanvasElement) {
     canvas.addEventListener('mousedown', (event) => {
         if (mode != 1) return;
 
@@ -117,12 +119,21 @@ export function setupRectangleDrawing(canvas: HTMLCanvasElement, imageData: Imag
             const newRect = new Rectangle(startX, startY, endX, endY, currentColor);
             rectangles.push(newRect);
 
-            const { x1, y1, x2, y2, color } = newRect;
-            drawLineBresenham(x1, y1, x1, y2, canvas, imageData.data, color);
-            drawLineBresenham(x2, y1, x2, y2, canvas, imageData.data, color);
-            drawLineBresenham(x1, y1, x2, y1, canvas, imageData.data, color);
-            drawLineBresenham(x1, y2, x2, y2, canvas, imageData.data, color);
+            
+            previewRect = null;
         }
+    });
+
+    canvas.addEventListener('mousemove', (event) => {
+        if (mode != 1 || isDrawing === false) {
+            previewRect = null;
+            return;
+        }
+        
+        const currentX = event.offsetX;
+        const currentY = event.offsetY;
+
+        previewRect = new Rectangle(startX, startY, currentX, currentY, currentColor);
     });
 }
 

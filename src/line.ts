@@ -84,6 +84,7 @@ let lines: Line[] = [];
 export let isDrawing = false;
 export let startX = 0;
 export let startY = 0;
+export let previewLine: Line | null = null;
 
 
 export function drawLineBresenham(x1: number, y1: number, x2: number, y2: number, canvas?: HTMLCanvasElement, data?: Uint8ClampedArray, color?: string) {
@@ -118,7 +119,7 @@ export function drawLineBresenham(x1: number, y1: number, x2: number, y2: number
     }
 }
 
-export function setupLineDrawing(canvas: HTMLCanvasElement, imageData: ImageData) {
+export function setupLineDrawing(canvas: HTMLCanvasElement) {
     canvas.addEventListener('mousedown', (event) => {
         if (mode != 0) return;
 
@@ -130,12 +131,23 @@ export function setupLineDrawing(canvas: HTMLCanvasElement, imageData: ImageData
             isDrawing = false;
             const endX = event.offsetX;
             const endY = event.offsetY;
-            drawLineBresenham(startX, startY, endX, endY, canvas, imageData.data);
             lines.push(new Line(startX, startY, endX, endY, currentColor));
+            
+            previewLine = null; 
+        }
+    });
+
+    canvas.addEventListener('mousemove', (event) => {
+        if (mode != 0 || isDrawing === false) {
+            previewLine = null; 
+            return;
         }
 
+        const currentX = event.offsetX;
+        const currentY = event.offsetY;
+        
+        previewLine = new Line(startX, startY, currentX, currentY, currentColor);
     });
-    
 }
 
 export function getLines(): Line[] {

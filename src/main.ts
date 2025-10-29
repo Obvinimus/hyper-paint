@@ -1,9 +1,9 @@
 import './style.css'
-import { getLines, setupLineDrawing, drawLineBresenham } from './line.ts';
+import { getLines, setupLineDrawing, drawLineBresenham, previewLine } from './line.ts';
 import { setupPixelDrawing } from './pentool.ts';
 import { setColor, setMode } from './state.ts';
-import { setupRectangleDrawing, getRectangles } from './rectangle.ts';
-import { setupCircleDrawing,getCircles, drawCircleMidpoint } from './circle.ts';
+import { setupRectangleDrawing, getRectangles, previewRect } from './rectangle.ts';
+import { setupCircleDrawing,getCircles, drawCircleMidpoint, previewCircle } from './circle.ts';
 import { setupSelection, selectedShape, drawHandle } from './grabtool.ts';
 
 
@@ -64,9 +64,9 @@ function init() {
   if (!graphics || !canvas || !imageData) return; 
 
   setupPixelDrawing(canvas, graphics, imageData);
-  setupLineDrawing(canvas, imageData); 
-  setupRectangleDrawing(canvas, imageData);
-  setupCircleDrawing(canvas, imageData);
+  setupLineDrawing(canvas); 
+  setupRectangleDrawing(canvas);
+  setupCircleDrawing(canvas);
   setupSelection(canvas);
 
   draw();
@@ -86,6 +86,20 @@ function draw(){
       for (const handle of handles) {
           drawHandle(handle.x, handle.y, imageData.data, canvas.width);
       }
+  }
+
+  if (previewLine) {
+    drawLineBresenham(previewLine.x1, previewLine.y1, previewLine.x2, previewLine.y2, canvas, imageData.data, previewLine.color);
+  }
+  if (previewRect) {
+    const rect = previewRect;
+    drawLineBresenham(rect.x1, rect.y1, rect.x1, rect.y2, canvas, imageData.data, rect.color); 
+    drawLineBresenham(rect.x2, rect.y1, rect.x2, rect.y2, canvas, imageData.data, rect.color); 
+    drawLineBresenham(rect.x1, rect.y1, rect.x2, rect.y1, canvas, imageData.data, rect.color);
+    drawLineBresenham(rect.x1, rect.y2, rect.x2, rect.y2, canvas, imageData.data, rect.color); 
+  }
+  if (previewCircle) {
+    drawCircleMidpoint(previewCircle.centerX, previewCircle.centerY, previewCircle.radius, canvas, imageData.data, previewCircle.color);
   }
 
   graphics.putImageData(imageData, 0, 0);
