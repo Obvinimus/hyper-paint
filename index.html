@@ -44,6 +44,12 @@
         <input type="color" id="colorPicker" class="ml-4" value="#000000" />
       </div>
       <canvas id="maincanvas" width="1280" height="860"></canvas>
+      <div id="fileToolbar" class="fixed bottom-0 left-0 bg-gray-900 p-2 flex space-x-2 v-screen">
+        <button id="saveButton" title="Zapisz">Zapisz</button>
+        <input type="file" id="loadInput" accept=".json" style="display: none;" />
+        <button id="loadButton" title="Wczytaj">Wczytaj</button>
+      </div>
+
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

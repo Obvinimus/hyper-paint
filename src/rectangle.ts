@@ -1,5 +1,4 @@
 import { mode, currentColor } from "./state";
-import { drawLineBresenham } from "./line";
 import type { Handle } from "./state";
 
 let startX: number;
@@ -42,10 +41,10 @@ export class Rectangle {
             return Math.pow(px - closestX, 2) + Math.pow(py - closestY, 2) <= Math.pow(threshold, 2);
         };
 
-        if (checkSegment(px, py, x1, y1, x2, y1)) return true; // Góra
-        if (checkSegment(px, py, x1, y2, x2, y2)) return true; // Dół
-        if (checkSegment(px, py, x1, y1, x1, y2)) return true; // Lewa
-        if (checkSegment(px, py, x2, y1, x2, y2)) return true; // Prawa
+        if (checkSegment(px, py, x1, y1, x2, y1)) return true;
+        if (checkSegment(px, py, x1, y2, x2, y2)) return true; 
+        if (checkSegment(px, py, x1, y1, x1, y2)) return true; 
+        if (checkSegment(px, py, x2, y1, x2, y2)) return true; 
         return false;
     }
 
@@ -139,4 +138,8 @@ export function setupRectangleDrawing(canvas: HTMLCanvasElement) {
 
 export function getRectangles(): Rectangle[] {
     return rectangles;
+}
+
+export function setRectangles(newRects: Rectangle[]) {
+  rectangles = newRects;
 }

@@ -158,3 +158,7 @@ export function clearLines(): void {
   lines = [];
 }
 
+export function setLines(newLines: Line[]) {
+  lines = newLines;
+}
+

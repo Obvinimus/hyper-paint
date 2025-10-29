@@ -149,3 +149,7 @@ export function setupCircleDrawing(canvas: HTMLCanvasElement) {
 export function getCircles(): Circle[] {
     return circles;
 }
+
+export function setCircles(newCircles: Circle[]) {
+  circles = newCircles;
+}
