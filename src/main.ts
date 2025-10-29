@@ -90,7 +90,7 @@ function init() {
 function draw(){
   if (!graphics || !canvas || !imageData) return;
 
-  imageData.data.fill(0); 
+  imageData.data.fill(255);
 
   drawLines();
   drawRectangles();

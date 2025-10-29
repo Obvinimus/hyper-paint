@@ -7,35 +7,58 @@
     <title>HyperPaint</title>
   </head>
   <body>
-    <div id="app" class="bg-gray-900 h-screen w-screen overflow-hidden">
+    <div id="app" class="w-screen h-screen bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700
+    dark:from-gray-800 dark:via-gray-900 dark:to-black
+    bg-[length:400%_400%]">
       <div id="toolbar" class="fixed top-0 left-0 bg-gray-900 p-2 flex space-x-2 w-screen">
-        <button id="pencilTool">
+        <button id="pencilTool" class="bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 
+  text-indigo-700 hover:text-white
+    hover:rounded-xl rounded-3xl
+    transition-all duration-300 ease-linear
+    cursor-pointer shadow-lg">
           <img 
             src="src/assests/pencil-tool-icon.svg" 
             alt="Narzędzie Ołówek" 
             class="w-25 h-25"
           />
-        <button id="lineTool">
+        <button id="lineTool" class="bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 
+  text-indigo-700 hover:text-white
+    hover:rounded-xl rounded-3xl
+    transition-all duration-300 ease-linear
+    cursor-pointer shadow-lg">
           <img 
             src="src/assests/line-tool-icon.svg" 
             alt="Narzędzie Linia" 
             class="w-25 h-25"
           />  
         </button>
-        <button id="rectTool">
+        <button id="rectTool" class="bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 
+  text-indigo-700 hover:text-white
+    hover:rounded-xl rounded-3xl
+    transition-all duration-300 ease-linear
+    cursor-pointer shadow-lg">
           <img 
             src="src/assests/rectangle-tool-icon.svg" 
             alt="Narzędzie Prostokąt" 
             class="w-25 h-25"
           />  
         </button>
-        <button id="circleTool">
+        <button id="circleTool" class=" bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 
+  text-indigo-700 hover:text-white
+    hover:rounded-xl rounded-3xl
+    transition-all duration-300 ease-linear
+    cursor-pointer shadow-lg
+">
           <img 
             src="src/assests/circle-tool-icon.svg" 
             alt="Narzędzie Koło" 
             class="w-25 h-25"
           />
-          <button id="grabTool">
+          <button id="grabTool" class="bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 
+  text-indigo-700 hover:text-white
+    hover:rounded-xl rounded-3xl
+    transition-all duration-300 ease-linear
+    cursor-pointer shadow-lg">
             <img 
               src="src/assests/grab-tool-icon.svg" 
               alt="Narzędzie Chwytak" 
