@@ -1,5 +1,6 @@
 import './state.ts';
 import { mode, currentColor } from "./state";
+import type { Handle } from "./state";
 
 let startX: number;
 let startY: number;
@@ -31,6 +32,20 @@ class Circle {
     public move(dx: number, dy: number) {
         this.centerX += dx;
         this.centerY += dy;
+    }
+
+    public getHandles(): Handle[] {
+        return [
+            { id: 'radius', x: this.centerX + this.radius, y: this.centerY }
+        ];
+    }
+
+    public resize(handleId: string, newX: number, newY: number) {
+        if (handleId === 'radius') {
+            const dx = newX - this.centerX;
+            const dy = newY - this.centerY;
+            this.radius = Math.sqrt(dx * dx + dy * dy);
+        }
     }
 }
 

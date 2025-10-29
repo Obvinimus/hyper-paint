@@ -1,6 +1,7 @@
 import './main.ts'
 import { mode, currentColor } from './state.ts';
 import { changePixelColor } from './pixel.ts';
+import type { Handle } from "./state";
 
 export class Line {
     public x1: number;
@@ -59,6 +60,23 @@ export class Line {
         this.y1 += dy;
         this.x2 += dx;
         this.y2 += dy;
+    }
+
+    public getHandles(): Handle[] {
+        return [
+            { id: 'start', x: this.x1, y: this.y1 },
+            { id: 'end', x: this.x2, y: this.y2 }
+        ];
+    }
+
+    public resize(handleId: string, newX: number, newY: number) {
+        if (handleId === 'start') {
+            this.x1 = newX;
+            this.y1 = newY;
+        } else if (handleId === 'end') {
+            this.x2 = newX;
+            this.y2 = newY;
+        }
     }
 }
 
