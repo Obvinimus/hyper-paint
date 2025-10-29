@@ -7,32 +7,101 @@ let startY: number;
 let isDrawing: boolean = false;
 let rectangles: Rectangle[] = [];
 
-class Rectangle {
-    left: Line;
-    right: Line
-    top: Line;
-    bottom: Line;
+export type Handle = {
+    id: string; 
+    x: number;
+    y: number;
+}
 
-    constructor(line1: Line, line2: Line, line3: Line, line4: Line) {
-        this.left = line1;
-        this.right = line2;
-        this.top = line3;
-        this.bottom = line4;
+export class Rectangle {
+    public x1: number;
+    public y1: number;
+    public x2: number;
+    public y2: number;
+    public color: string;
+    public readonly type = 'rectangle'; 
+
+    constructor(x1: number, y1: number, x2: number, y2: number, color: string) {
+
+        this.x1 = Math.min(x1, x2);
+        this.y1 = Math.min(y1, y2);
+        this.x2 = Math.max(x1, x2);
+        this.y2 = Math.max(y1, y2);
+        this.color = color;
     }
+
+
     public hitTest(px: number, py: number, threshold: number = 5): boolean {
-        return (
-            this.left.hitTest(px, py, threshold) ||
-            this.right.hitTest(px, py, threshold) ||
-            this.top.hitTest(px, py, threshold) ||
-            this.bottom.hitTest(px, py, threshold)
-        );
+        const { x1, y1, x2, y2 } = this;
+        
+        const checkSegment = (px: number, py: number, ax: number, ay: number, bx: number, by: number) => {
+            const lenSq = Math.pow(bx - ax, 2) + Math.pow(by - ay, 2);
+            if (lenSq === 0) {
+                return Math.pow(px - ax, 2) + Math.pow(py - ay, 2) <= Math.pow(threshold, 2);
+            }
+            const t = ((px - ax) * (bx - ax) + (py - ay) * (by - ay)) / lenSq;
+            const t_clamped = Math.max(0, Math.min(1, t));
+            const closestX = ax + t_clamped * (bx - ax);
+            const closestY = ay + t_clamped * (by - ay);
+            return Math.pow(px - closestX, 2) + Math.pow(py - closestY, 2) <= Math.pow(threshold, 2);
+        };
+
+        if (checkSegment(px, py, x1, y1, x2, y1)) return true; // Góra
+        if (checkSegment(px, py, x1, y2, x2, y2)) return true; // Dół
+        if (checkSegment(px, py, x1, y1, x1, y2)) return true; // Lewa
+        if (checkSegment(px, py, x2, y1, x2, y2)) return true; // Prawa
+        return false;
     }
 
     public move(dx: number, dy: number) {
-        this.left.move(dx, dy);
-        this.right.move(dx, dy);
-        this.top.move(dx, dy);
-        this.bottom.move(dx, dy);
+        this.x1 += dx;
+        this.y1 += dy;
+        this.x2 += dx;
+        this.y2 += dy;
+    }
+
+
+    public getHandles(): Handle[] {
+        return [
+            { id: 'top-left', x: this.x1, y: this.y1 },
+            { id: 'top-right', x: this.x2, y: this.y1 },
+            { id: 'bottom-left', x: this.x1, y: this.y2 },
+            { id: 'bottom-right', x: this.x2, y: this.y2 }
+        ];
+    }
+
+    
+    public resize(handleId: string, newX: number, newY: number) {
+        switch (handleId) {
+            case 'top-left':
+                this.x1 = newX;
+                this.y1 = newY;
+                break;
+            case 'top-right':
+                this.x2 = newX;
+                this.y1 = newY;
+                break;
+            case 'bottom-left':
+                this.x1 = newX;
+                this.y2 = newY;
+                break;
+            case 'bottom-right':
+                this.x2 = newX;
+                this.y2 = newY;
+                break;
+        }
+        this.normalize();
+    }
+
+    private normalize() {
+        const x1 = Math.min(this.x1, this.x2);
+        const y1 = Math.min(this.y1, this.y2);
+        const x2 = Math.max(this.x1, this.x2);
+        const y2 = Math.max(this.y1, this.y2);
+        this.x1 = x1;
+        this.y1 = y1;
+        this.x2 = x2;
+        this.y2 = y2;
     }
 }
 
@@ -48,15 +117,15 @@ export function setupRectangleDrawing(canvas: HTMLCanvasElement, imageData: Imag
             isDrawing = false;
             const endX = event.offsetX;
             const endY = event.offsetY;
-            const line1 = new Line(startX, startY, startX, endY, currentColor);
-            const line2 = new Line(endX, startY, endX, endY, currentColor);
-            const line3 = new Line(startX, startY, endX, startY, currentColor);
-            const line4 = new Line(startX, endY, endX, endY, currentColor);
-            drawLineBresenham(line1.x1, line1.y1, line1.x2, line1.y2, canvas, imageData.data, line1.color);
-            drawLineBresenham(line2.x1, line2.y1, line2.x2, line2.y2, canvas, imageData.data, line2.color);
-            drawLineBresenham(line3.x1, line3.y1, line3.x2, line3.y2, canvas, imageData.data, line3.color);
-            drawLineBresenham(line4.x1, line4.y1, line4.x2, line4.y2, canvas, imageData.data, line4.color);
-            rectangles.push(new Rectangle(line1,line2,line3,line4));
+            
+            const newRect = new Rectangle(startX, startY, endX, endY, currentColor);
+            rectangles.push(newRect);
+
+            const { x1, y1, x2, y2, color } = newRect;
+            drawLineBresenham(x1, y1, x1, y2, canvas, imageData.data, color);
+            drawLineBresenham(x2, y1, x2, y2, canvas, imageData.data, color);
+            drawLineBresenham(x1, y1, x2, y1, canvas, imageData.data, color);
+            drawLineBresenham(x1, y2, x2, y2, canvas, imageData.data, color);
         }
     });
 }
