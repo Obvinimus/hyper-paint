@@ -1,5 +1,11 @@
 export let currentColor: string = "#ff0000";
 
+export type Handle = {
+    id: string; 
+    x: number;
+    y: number;
+}
+
 
 export let mode: number = 3; 
 

@@ -4,7 +4,8 @@ import { setupPixelDrawing } from './pentool.ts';
 import { setColor, setMode } from './state.ts';
 import { setupRectangleDrawing, getRectangles } from './rectangle.ts';
 import { setupCircleDrawing,getCircles, drawCircleMidpoint } from './circle.ts';
-import { setupSelection } from './grabtool.ts';
+import { setupSelection, selectedShape, drawHandle } from './grabtool.ts';
+
 
 let graphics: CanvasRenderingContext2D | null;
 let canvas: HTMLCanvasElement | null;
@@ -79,6 +80,13 @@ function draw(){
   drawLines();
   drawRectangles();
   drawCircles(); 
+
+  if (selectedShape && typeof selectedShape.getHandles === 'function') {
+      const handles = selectedShape.getHandles();
+      for (const handle of handles) {
+          drawHandle(handle.x, handle.y, imageData.data, canvas.width);
+      }
+  }
 
   graphics.putImageData(imageData, 0, 0);
   requestAnimationFrame(draw);

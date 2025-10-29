@@ -1,17 +1,13 @@
-import { Line } from "./line";
 import { mode, currentColor } from "./state";
 import { drawLineBresenham } from "./line";
+import type { Handle } from "./state";
 
 let startX: number;
 let startY: number;
 let isDrawing: boolean = false;
 let rectangles: Rectangle[] = [];
 
-export type Handle = {
-    id: string; 
-    x: number;
-    y: number;
-}
+
 
 export class Rectangle {
     public x1: number;
