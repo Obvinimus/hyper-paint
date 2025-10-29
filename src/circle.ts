@@ -18,6 +18,20 @@ class Circle {
         this.radius = r;
         this.color = color;
     }
+    public hitTest(px: number, py: number, threshold: number = 5): boolean {
+        const dx = px - this.centerX;
+        const dy = py - this.centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        const distanceFromEdge = Math.abs(distance - this.radius);
+
+        return distanceFromEdge <= threshold;
+    }
+
+    public move(dx: number, dy: number) {
+        this.centerX += dx;
+        this.centerY += dy;
+    }
 }
 
 

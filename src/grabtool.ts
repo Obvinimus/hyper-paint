@@ -2,6 +2,7 @@ import './state.ts';
 import { mode } from "./state";
 import { getRectangles } from "./rectangle";
 import { getLines } from "./line";
+import { getCircles } from "./circle";
 
 let selectedShape: any | null = null;
 let isDragging = false;
@@ -18,6 +19,13 @@ export function setupSelection(canvas: HTMLCanvasElement) {
 
         selectedShape = null; 
         isDragging = false;
+
+        for (const circle of getCircles().slice().reverse()) {
+            if (circle.hitTest(x, y)) {
+                selectedShape = circle;
+                break; 
+            }
+        }
 
 
         for (const rect of getRectangles().slice().reverse()) { 
@@ -39,7 +47,6 @@ export function setupSelection(canvas: HTMLCanvasElement) {
 
 
         if (selectedShape) {
-            console.log("Trafiono obiekt!", selectedShape);
             isDragging = true;
             lastMouseX = x;
             lastMouseY = y;
