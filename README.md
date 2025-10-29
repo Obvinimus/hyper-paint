@@ -62,8 +62,8 @@ This project is built using **Vite** + **TypeScript**.
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/your-username/your-repo.git](https://github.com/your-username/your-repo.git)
-    cd your-repo
+    git clone https://github.com/Obvinimus/hyper-paint
+    cd hyper-paint
     ```
 
 2.  **Install dependencies:**
