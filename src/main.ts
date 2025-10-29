@@ -5,7 +5,7 @@ import { setupSelection, selectedShape, drawHandle } from './grabtool.ts';
 import { getLines, setupLineDrawing, drawLineBresenham, previewLine, setLines, Line } from './line.ts';
 import { setupRectangleDrawing, getRectangles, previewRect, setRectangles, Rectangle } from './rectangle.ts';
 import { setupCircleDrawing, getCircles, drawCircleMidpoint, previewCircle, setCircles, Circle } from './circle.ts';
-import { initPropertiesPanel } from './properties.ts';
+import { initPropertiesPanel, updatePropertiesPanel } from './properties.ts';
 
 
 let graphics: CanvasRenderingContext2D | null;
@@ -32,22 +32,27 @@ function mousePos(canvas: HTMLCanvasElement) {
 
 document.getElementById('lineTool')?.addEventListener('click', () => {
   setMode(0);
+  updatePropertiesPanel(null); 
 });
 
 document.getElementById('rectTool')?.addEventListener('click', () => {
   setMode(1);
+  updatePropertiesPanel(null); 
 });
 
 document.getElementById('circleTool')?.addEventListener('click', () => {
   setMode(2);
+  updatePropertiesPanel(null); 
 });
 
 document.getElementById('pencilTool')?.addEventListener('click', () => {
   setMode(3);
+  updatePropertiesPanel(null); 
 });
 
 document.getElementById('grabTool')?.addEventListener('click', () => {
   setMode(4);
+  updatePropertiesPanel(null); 
 });
 
 
