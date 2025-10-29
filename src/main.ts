@@ -3,7 +3,8 @@ import { getLines, setupLineDrawing, drawLineBresenham } from './line.ts';
 import { setupPixelDrawing } from './pentool.ts';
 import { setColor, setMode } from './state.ts';
 import { setupRectangleDrawing, getRectangles } from './rectangle.ts';
-import { setupCircleDrawing } from './circle.ts';
+import { setupCircleDrawing,getCircles, drawCircleMidpoint } from './circle.ts';
+import { setupSelection } from './grabtool.ts';
 
 let graphics: CanvasRenderingContext2D | null;
 let canvas: HTMLCanvasElement | null;
@@ -43,6 +44,10 @@ document.getElementById('pencilTool')?.addEventListener('click', () => {
   setMode(3);
 });
 
+document.getElementById('grabTool')?.addEventListener('click', () => {
+  setMode(4);
+});
+
 
 function init() {
   canvas = document.getElementById('maincanvas') as HTMLCanvasElement;
@@ -61,14 +66,20 @@ function init() {
   setupLineDrawing(canvas, imageData); 
   setupRectangleDrawing(canvas, imageData);
   setupCircleDrawing(canvas, imageData);
+  setupSelection(canvas);
 
   draw();
 }
 
 function draw(){
   if (!graphics || !canvas || !imageData) return;
+
+  imageData.data.fill(0); 
+
   drawLines();
   drawRectangles();
+  drawCircles(); 
+
   graphics.putImageData(imageData, 0, 0);
   requestAnimationFrame(draw);
 }
@@ -87,6 +98,13 @@ function drawRectangles(){
     drawLineBresenham(rect.right.x1, rect.right.y1, rect.right.x2, rect.right.y2, canvas!, imageData!.data, rect.right.color);
     drawLineBresenham(rect.top.x1, rect.top.y1, rect.top.x2, rect.top.y2, canvas!, imageData!.data, rect.top.color);
     drawLineBresenham(rect.bottom.x1, rect.bottom.y1, rect.bottom.x2, rect.bottom.y2, canvas!, imageData!.data, rect.bottom.color);
+  }
+}
+
+function drawCircles(){
+  const circles = getCircles();
+  for (const circle of circles) {
+    drawCircleMidpoint(circle.centerX, circle.centerY, circle.radius, canvas!, imageData!.data, circle.color);
   }
 }
 

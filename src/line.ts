@@ -22,6 +22,44 @@ export class Line {
         this.y2 = y2;
         this.color = color;
     }
+    public hitTest(px: number, py: number, threshold: number = 5): boolean {
+        const x1 = this.x1;
+        const y1 = this.y1;
+        const x2 = this.x2;
+        const y2 = this.y2;
+
+        const lenSq = Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2);
+
+        if (lenSq === 0) {
+            const distSq = Math.pow(px - x1, 2) + Math.pow(py - y1, 2);
+            return distSq <= Math.pow(threshold, 2);
+        }
+
+        const t = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / lenSq;
+
+        let closestX, closestY;
+
+        if (t < 0) {
+            closestX = x1;
+            closestY = y1;
+        } else if (t > 1) {
+            closestX = x2;
+            closestY = y2;
+        } else {
+            closestX = x1 + t * (x2 - x1);
+            closestY = y1 + t * (y2 - y1);
+        }
+
+        const distSq = Math.pow(px - closestX, 2) + Math.pow(py - closestY, 2);
+        return distSq <= Math.pow(threshold, 2);
+    }
+
+    public move(dx: number, dy: number) {
+        this.x1 += dx;
+        this.y1 += dy;
+        this.x2 += dx;
+        this.y2 += dy;
+    }
 }
 
 let lines: Line[] = [];

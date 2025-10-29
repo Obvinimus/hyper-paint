@@ -43,7 +43,7 @@ function setPixel(x: number, y: number, color: string, width: number, data: Uint
 }
 
 
-function drawCircleMidpoint(centerX: number, centerY: number, radius: number, canvas: HTMLCanvasElement, data: Uint8ClampedArray, color: string) {
+export function drawCircleMidpoint(centerX: number, centerY: number, radius: number, canvas: HTMLCanvasElement, data: Uint8ClampedArray, color: string) {
     let r = Math.round(radius);
     let x = r;
     let y = 0;

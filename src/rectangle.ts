@@ -19,6 +19,21 @@ class Rectangle {
         this.top = line3;
         this.bottom = line4;
     }
+    public hitTest(px: number, py: number, threshold: number = 5): boolean {
+        return (
+            this.left.hitTest(px, py, threshold) ||
+            this.right.hitTest(px, py, threshold) ||
+            this.top.hitTest(px, py, threshold) ||
+            this.bottom.hitTest(px, py, threshold)
+        );
+    }
+
+    public move(dx: number, dy: number) {
+        this.left.move(dx, dy);
+        this.right.move(dx, dy);
+        this.top.move(dx, dy);
+        this.bottom.move(dx, dy);
+    }
 }
 
 export function setupRectangleDrawing(canvas: HTMLCanvasElement, imageData: ImageData) {
