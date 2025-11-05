@@ -6,7 +6,7 @@ import { getLines, setupLineDrawing, drawLineBresenham, previewLine, setLines, L
 import { setupRectangleDrawing, getRectangles, previewRect, setRectangles, Rectangle } from './rectangle.ts';
 import { setupCircleDrawing, getCircles, drawCircleMidpoint, previewCircle, setCircles, Circle } from './circle.ts';
 import { initPropertiesPanel, updatePropertiesPanel } from './properties.ts';
-import {  parsePPMP3 } from './ppm.ts';
+import {  parsePPMP3, parsePPMP6 } from './ppm.ts';
 
 
 let graphics: CanvasRenderingContext2D | null;
@@ -104,13 +104,34 @@ loadPPMInput.addEventListener('change', (event) => {
     const reader = new FileReader();
     
     reader.onload = (e) => {
-        console.log("4. File loaded, length:", (e.target?.result as string)?.length);
-        const content = e.target?.result as string;
-        const ppmData = parsePPMP3(content);
+        const buffer = e.target?.result as ArrayBuffer;
+        if (!buffer) {
+            alert("Nie udało się wczytać pliku.");
+            return;
+        }
+        console.log("4. File loaded, length:", buffer.byteLength);
+
+        const view = new Uint8Array(buffer, 0, 2);
+        const magicNumber = String.fromCharCode(view[0], view[1]);
+
+        let ppmData;
+
+        if (magicNumber === 'P3') {
+            console.log("Detected PPM P3 (ASCII)");
+            const content = new TextDecoder().decode(buffer);
+            ppmData = parsePPMP3(content); 
+        } else if (magicNumber === 'P6') {
+            console.log("Detected PPM P6 (Binary)");
+            ppmData = parsePPMP6(buffer); 
+        } else {
+            alert(`Nieobsługiwany format pliku PPM: ${magicNumber}`);
+            return;
+        }
+
         console.log("5. PPM data parsed:", ppmData);
         
         if (!ppmData) {
-            alert("Nieprawidłowy format pliku PPM.");
+            alert("Nieprawidłowy format pliku PPM lub błąd parsowania.");
             return;
         }
         
@@ -123,12 +144,15 @@ loadPPMInput.addEventListener('change', (event) => {
         imageData = graphics!.createImageData(canvas!.width, canvas!.height);
         console.log("8. Canvas resized to:", canvas!.width, "x", canvas!.height);
         
+
         const ppmImageData = graphics!.createImageData(canvas!.width, canvas!.height);
         ppmImageData.data.fill(255); 
         
         for (let y = 0; y < ppmData.height; y++) {
             for (let x = 0; x < ppmData.width; x++) {
                 const pixelIndex = y * ppmData.width + x;
+                if (pixelIndex >= ppmData.pixels.length) continue; 
+                
                 const pixel = ppmData.pixels[pixelIndex];
                 
                 const actualIndex = (y * canvas!.width + x) * 4;
@@ -148,9 +172,11 @@ loadPPMInput.addEventListener('change', (event) => {
         loadedPPMImage = ppmImageData;
     };
     
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file); 
     input.value = '';
 });
+
+
 draw();
 }
 
