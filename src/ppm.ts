@@ -1,7 +1,14 @@
 import './state.ts';
 
 
-export function parsePPMP3(data: string) {
+export type PpmData = {
+    width: number;
+    height: number;
+    maxColorValue: number;
+    pixels: { r: number; g: number; b: number }[];
+};
+
+export function parsePPMP3(data: string): PpmData | null {
     console.log("parsePPMP3: Starting parse, data length:", data.length);
     const tokens = data.replace(/#.*$/gm, '').trim().split(/\s+/);
     console.log("parsePPMP3: Total tokens found:", tokens.length);
@@ -57,13 +64,6 @@ export function parsePPMP3(data: string) {
     return { width, height, maxColorValue, pixels };
 }
 
-type PpmData = {
-    width: number;
-    height: number;
-    maxColorValue: number;
-    pixels: { r: number; g: number; b: number }[];
-};
-
 function parseP6Header(view: Uint8Array): {
     width: number;
     height: number;
@@ -103,8 +103,6 @@ function parseP6Header(view: Uint8Array): {
     if (currentToken.length > 0 && headerTokens.length < 3) {
         headerTokens.push(currentToken);
     }
-    
-
     if (headerTokens.length < 3) {
          console.error("P6 Error: Incomplete header.");
          return null;
@@ -140,7 +138,6 @@ export function parsePPMP6(buffer: ArrayBuffer): PpmData | null {
     const numPixelsToRead = width * height;
 
     if (maxColorValue <= 255) {
-
         const pixelData = new Uint8Array(buffer, dataStartIndex);
         const expectedBytes = numPixelsToRead * 3;
         
@@ -152,7 +149,6 @@ export function parsePPMP6(buffer: ArrayBuffer): PpmData | null {
             pixels.push({ r: pixelData[i], g: pixelData[i + 1], b: pixelData[i + 2] });
         }
     } else {
-
         const pixelDataView = new DataView(buffer, dataStartIndex);
         const bytesPerChannel = 2;
         const bytesPerPixel = 3 * bytesPerChannel;
@@ -164,7 +160,7 @@ export function parsePPMP6(buffer: ArrayBuffer): PpmData | null {
 
         for (let i = 0; i < numPixelsToRead; i++) {
             const offset = i * bytesPerPixel;
-            if (offset + 5 >= pixelDataView.byteLength) { 
+            if (offset + 5 >= pixelDataView.byteLength) {
                  break; 
             }
             

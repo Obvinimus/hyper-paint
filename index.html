@@ -67,13 +67,19 @@
         <input type="color" id="colorPicker" class="ml-4" value="#000000" />
       </div>
       <canvas id="maincanvas" width="1280" height="860" class="mt-30"></canvas>
-      <div id="fileToolbar" class="fixed bottom-0 left-0 bg-gray-900 p-2 flex space-x-2 v-screen">
-        <button id="saveButton" title="Zapisz" class="text-amber-50">Zapisz</button>
-        <input type="file" id="loadInput" accept=".json" style="display: none;" />
-        <button id="loadButton" title="Wczytaj" class="text-amber-50">Wczytaj</button>
-        <button id="loadPPM" title="Wczytaj PPM" class="text-amber-50">Wczytaj PPM</button>
-        <input type="file" id="loadPPMInput" accept=".ppm" style="display: none;" />
-      </div>
+<div id="fileToolbar" class="fixed bottom-0 left-0 bg-gray-900 p-2 flex space-x-4 items-center w-screen">
+    
+    <button id="saveButton" title="Zapisz projekt (JSON)" class="text-amber-50">Zapisz Projekt</button>
+    
+    <button id="saveJPEGButton" title="Zapisz jako JPEG" class="text-amber-50">Zapisz JPEG</button>
+
+    <label for="jpegQuality" class="text-amber-50 text-sm ml-2">Jakość:</label>
+    <input type="range" id="jpegQuality" min="0.1" max="1.0" step="0.1" value="0.9" class="w-24">
+    
+    <input type="file" id="loadFileInput" accept=".json,.ppm,.jpg,.jpeg" style="display: none;" />
+    
+    <button id="loadButton" title="Wczytaj (JSON, PPM, JPEG)" class="text-amber-50">Wczytaj Plik</button>
+</div>
         <div id="properties-panel" 
      class="fixed top-0 right-0 h-full w-64 bg-gray-100 p-4 shadow-lg border-l border-gray-300 transform translate-x-full transition-transform z-10">
     
