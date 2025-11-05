@@ -6,6 +6,7 @@ import { getLines, setupLineDrawing, drawLineBresenham, previewLine, setLines, L
 import { setupRectangleDrawing, getRectangles, previewRect, setRectangles, Rectangle } from './rectangle.ts';
 import { setupCircleDrawing, getCircles, drawCircleMidpoint, previewCircle, setCircles, Circle } from './circle.ts';
 import { initPropertiesPanel, updatePropertiesPanel } from './properties.ts';
+import {  parsePPMP3, drawPPMOnCanvas } from './ppm.ts';
 
 
 let graphics: CanvasRenderingContext2D | null;
@@ -13,6 +14,7 @@ let canvas: HTMLCanvasElement | null;
 let imageData: ImageData | undefined;
 let data: Uint8ClampedArray | undefined;
 export let currentMousePos: [number, number];
+let loadedPPMImage: ImageData | null = null;
 
 const colorPicker = document.getElementById('colorPicker') as HTMLInputElement;
 colorPicker.addEventListener('input', (event) => {
@@ -84,13 +86,82 @@ function init() {
   });
   loadInput.addEventListener('change', loadDrawing);
 
-  draw();
+const loadPPMInput = document.getElementById('loadPPMInput') as HTMLInputElement;
+  document.getElementById('loadPPM')?.addEventListener('click', () => {
+      loadPPMInput.click();
+  });
+
+loadPPMInput.addEventListener('change', (event) => {
+    console.log("1. Change event triggered");
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) {
+        console.log("2. No files selected");
+        return;
+    }
+    
+    const file = input.files[0];
+    console.log("3. File selected:", file.name);
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+        console.log("4. File loaded, length:", (e.target?.result as string)?.length);
+        const content = e.target?.result as string;
+        const ppmData = parsePPMP3(content);
+        console.log("5. PPM data parsed:", ppmData);
+        
+        if (!ppmData) {
+            alert("Nieprawidłowy format pliku PPM.");
+            return;
+        }
+        
+        console.log("6. PPM dimensions:", ppmData.width, "x", ppmData.height);
+        console.log("7. Canvas before:", canvas!.width, "x", canvas!.height);
+        
+        canvas!.width = ppmData.width;
+        canvas!.height = ppmData.height;
+        
+        imageData = graphics!.createImageData(canvas!.width, canvas!.height);
+        console.log("8. Canvas resized to:", canvas!.width, "x", canvas!.height);
+        
+        const ppmImageData = graphics!.createImageData(canvas!.width, canvas!.height);
+        ppmImageData.data.fill(255); 
+        
+        for (let y = 0; y < ppmData.height; y++) {
+            for (let x = 0; x < ppmData.width; x++) {
+                const pixelIndex = y * ppmData.width + x;
+                const pixel = ppmData.pixels[pixelIndex];
+                
+                const actualIndex = (y * canvas!.width + x) * 4;
+                
+                const r_norm = (pixel.r / ppmData.maxColorValue) * 255;
+                const g_norm = (pixel.g / ppmData.maxColorValue) * 255;
+                const b_norm = (pixel.b / ppmData.maxColorValue) * 255;
+                
+                ppmImageData.data[actualIndex] = r_norm;
+                ppmImageData.data[actualIndex + 1] = g_norm;
+                ppmImageData.data[actualIndex + 2] = b_norm;
+                ppmImageData.data[actualIndex + 3] = 255;
+            }
+        }
+        
+        console.log("9. PPM saved to loadedPPMImage");
+        loadedPPMImage = ppmImageData;
+    };
+    
+    reader.readAsText(file);
+    input.value = '';
+});
+draw();
 }
 
 function draw(){
   if (!graphics || !canvas || !imageData) return;
 
-  imageData.data.fill(255);
+  if (loadedPPMImage) {
+    imageData.data.set(loadedPPMImage.data);
+  } else {
+    imageData.data.fill(255); 
+  }
 
   drawLines();
   drawRectangles();
@@ -200,6 +271,7 @@ function loadDrawing(event: Event) {
       setLines(newLines);
       setRectangles(newRects);
       setCircles(newCircles);
+      loadedPPMImage = null;
 
 
     } catch (error) {
@@ -211,5 +283,6 @@ function loadDrawing(event: Event) {
 
   input.value = '';
 }
+
 
 window.onload = init;
