@@ -5,19 +5,20 @@ import { getLines } from "./line";
 import { getCircles } from "./circle";
 import { changePixelColor } from './pixel.ts';
 import { updatePropertiesPanel } from './properties.ts';
+import { screenToWorld } from './coords.ts';
 
 export let selectedShape: any | null = null;
 let isDragging = false;
-let lastMouseX = 0;
-let lastMouseY = 0;
+let lastWorldX = 0;
+let lastWorldY = 0;
 let isResizing = false;
 let activeHandle: { id: string; x: number; y: number; } | null = null;
 const HANDLE_SIZE = 5;
 
 export function drawHandle(x: number, y: number, data: Uint8ClampedArray, canvasWidth: number) {
-    const size = 5;
+    const size = HANDLE_SIZE;
     const halfSize = Math.floor(size / 2);
-    const color = "#0000FF"; 
+    const color = "#0000FF";
 
     for (let i = -halfSize; i <= halfSize; i++) {
         for (let j = -halfSize; j <= halfSize; j++) {
@@ -31,10 +32,12 @@ export function drawHandle(x: number, y: number, data: Uint8ClampedArray, canvas
 export function setupSelection(canvas: HTMLCanvasElement) {
 
     canvas.addEventListener('mousedown', (event) => {
-        if (mode !== 4) return; 
+        if (mode !== 4 || event.button !== 0) return; 
 
-        const x = event.offsetX;
-        const y = event.offsetY;
+        const rect = canvas.getBoundingClientRect();
+        const screenX = event.clientX - rect.left;
+        const screenY = event.clientY - rect.top;
+        const [worldX, worldY] = screenToWorld(screenX, screenY);
 
         isDragging = false;
         isResizing = false;
@@ -44,29 +47,30 @@ export function setupSelection(canvas: HTMLCanvasElement) {
             const handles = selectedShape.getHandles();
             for (const handle of handles) {
                 if (
-                    x >= handle.x - HANDLE_SIZE && x <= handle.x + HANDLE_SIZE &&
-                    y >= handle.y - HANDLE_SIZE && y <= handle.y + HANDLE_SIZE
+                    worldX >= handle.x - HANDLE_SIZE && worldX <= handle.x + HANDLE_SIZE &&
+                    worldY >= handle.y - HANDLE_SIZE && worldY <= handle.y + HANDLE_SIZE
                 ) {
                     isResizing = true;
                     activeHandle = handle;
-                    lastMouseX = x;
-                    lastMouseY = y;
+                    lastWorldX = worldX;
+                    lastWorldY = worldY;
                     return; 
                 }
             }
         }
 
         selectedShape = null; 
+        const hitThreshold = 5;
 
         for (const circle of getCircles().slice().reverse()) {
-            if (circle.hitTest(x, y)) {
+            if (circle.hitTest(worldX, worldY, hitThreshold)) {
                 selectedShape = circle;
                 break;
             }
         }
         if (!selectedShape) {
             for (const rect of getRectangles().slice().reverse()) {
-                if (rect.hitTest(x, y)) {
+                if (rect.hitTest(worldX, worldY, hitThreshold)) {
                     selectedShape = rect;
                     break;
                 }
@@ -74,7 +78,7 @@ export function setupSelection(canvas: HTMLCanvasElement) {
         }
         if (!selectedShape) {
             for (const line of getLines().slice().reverse()) {
-                if (line.hitTest(x, y)) {
+                if (line.hitTest(worldX, worldY, hitThreshold)) {
                     selectedShape = line;
                     break;
                 }
@@ -83,8 +87,8 @@ export function setupSelection(canvas: HTMLCanvasElement) {
 
         if (selectedShape) {
             isDragging = true;
-            lastMouseX = x;
-            lastMouseY = y;
+            lastWorldX = worldX;
+            lastWorldY = worldY;
         }
         updatePropertiesPanel(selectedShape);
     });
@@ -92,26 +96,26 @@ export function setupSelection(canvas: HTMLCanvasElement) {
     canvas.addEventListener('mousemove', (event) => {
         if (mode !== 4) return;
 
-        const x = event.offsetX;
-        const y = event.offsetY;
+        const rect = canvas.getBoundingClientRect();
+        const screenX = event.clientX - rect.left;
+        const screenY = event.clientY - rect.top;
+        const [worldX, worldY] = screenToWorld(screenX, screenY);
 
         if (isResizing && activeHandle && selectedShape) {
-            selectedShape.resize(activeHandle.id, x, y);
+            selectedShape.resize(activeHandle.id, worldX, worldY);
             
-            activeHandle.x = x;
-            activeHandle.y = y;
         
         } else if (isDragging && selectedShape) {
-            const dx = x - lastMouseX;
-            const dy = y - lastMouseY;
+            const dx = worldX - lastWorldX;
+            const dy = worldY - lastWorldY;
             selectedShape.move(dx, dy);
-            lastMouseX = x;
-            lastMouseY = y;
+            lastWorldX = worldX;
+            lastWorldY = worldY;
         }
     });
 
-    canvas.addEventListener('mouseup', () => {
-        if (mode !== 4) return;
+    canvas.addEventListener('mouseup', (event) => {
+        if (mode !== 4 || event.button !== 0) return;
         
         isDragging = false;
         isResizing = false;

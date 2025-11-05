@@ -1,36 +1,44 @@
 import './style.css'
 import { setupPixelDrawing } from './pentool.ts';
-import { setColor, setMode } from './state.ts';
+import { setColor, setMode, scale, viewOffset, setScale, updateViewOffset, setViewOffset } from './state.ts';
 import { setupSelection, selectedShape, drawHandle } from './grabtool.ts';
 import { getLines, setupLineDrawing, drawLineBresenham, previewLine, setLines, Line } from './line.ts';
 import { setupRectangleDrawing, getRectangles, previewRect, setRectangles, Rectangle } from './rectangle.ts';
 import { setupCircleDrawing, getCircles, drawCircleMidpoint, previewCircle, setCircles, Circle } from './circle.ts';
 import { initPropertiesPanel, updatePropertiesPanel } from './properties.ts';
-import {  parsePPMP3, parsePPMP6} from './ppm.ts';
+import { parsePPMP3, parsePPMP6 } from './ppm.ts';
+import { screenToWorld, worldToScreen } from './coords.ts';
 import type { PpmData } from './ppm.ts';
-
 
 let graphics: CanvasRenderingContext2D | null;
 let canvas: HTMLCanvasElement | null;
 let imageData: ImageData | undefined;
 let data: Uint8ClampedArray | undefined;
-export let currentMousePos: [number, number];
+export let currentMousePos: [number, number] = [0, 0];
 let loadedPPMImage: ImageData | null = null;
+
+let offscreenCanvas: HTMLCanvasElement;
+let offscreenGraphics: CanvasRenderingContext2D;
+let isPanning = false;
+let lastPanX = 0;
+let lastPanY = 0;
+const MIN_ZOOM = 0.1;
+const MAX_ZOOM = 50;
+const GRID_ZOOM_THRESHOLD = 15;
 
 const colorPicker = document.getElementById('colorPicker') as HTMLInputElement;
 colorPicker.addEventListener('input', (event) => {
     setColor(colorPicker.value);
 });
 
-
-
 function mousePos(canvas: HTMLCanvasElement) {
   canvas.addEventListener('mousemove', (event) => {
     const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    currentMousePos = [x, y];
-});
+    const screenX = event.clientX - rect.left;
+    const screenY = event.clientY - rect.top;
+    const [worldX, worldY] = screenToWorld(screenX, screenY);
+    currentMousePos = [worldX, worldY];
+  });
 }
 
 document.getElementById('lineTool')?.addEventListener('click', () => {
@@ -58,16 +66,20 @@ document.getElementById('grabTool')?.addEventListener('click', () => {
   updatePropertiesPanel(null); 
 });
 
-
 function init() {
   canvas = document.getElementById('maincanvas') as HTMLCanvasElement;
-  graphics = canvas.getContext('2d');
-  
-  if (graphics) {
+  graphics = canvas.getContext('2d', { willReadFrequently: true });
+
+  offscreenCanvas = document.createElement('canvas');
+  offscreenGraphics = offscreenCanvas.getContext('2d', { willReadFrequently: true })!;
+
+  if (graphics && canvas) {
       imageData = graphics.createImageData(canvas.width, canvas.height);
       data = imageData.data;
+      offscreenCanvas.width = canvas.width;
+      offscreenCanvas.height = canvas.height;
   }
-  
+
   mousePos(canvas);
 
   if (!graphics || !canvas || !imageData) return; 
@@ -79,24 +91,25 @@ function init() {
   setupSelection(canvas);
   initPropertiesPanel();
 
+  canvas.addEventListener('wheel', handleZoom, { passive: false });
+  canvas.addEventListener('mousedown', startPan, { passive: false });
+  canvas.addEventListener('mousemove', pan, { passive: false });
+  canvas.addEventListener('mouseup', endPan);
+  canvas.addEventListener('mouseleave', endPan);
+
   document.getElementById('saveButton')?.addEventListener('click', saveDrawing);
-  
+  document.getElementById('saveJPEGButton')?.addEventListener('click', saveAsJPEG);
+  const loadFileInput = document.getElementById('loadFileInput') as HTMLInputElement;
+  document.getElementById('loadButton')?.addEventListener('click', () => {
+      loadFileInput.click(); 
+  });
+  loadFileInput.addEventListener('change', loadFile);
 
-document.getElementById('saveJPEGButton')?.addEventListener('click', saveAsJPEG);
-
-const loadFileInput = document.getElementById('loadFileInput') as HTMLInputElement;
-document.getElementById('loadButton')?.addEventListener('click', () => {
-    loadFileInput.click(); 
-});
-loadFileInput.addEventListener('change', loadFile);
-
-
-
-draw();
+  draw();
 }
 
 function draw(){
-  if (!graphics || !canvas || !imageData) return;
+  if (!graphics || !canvas || !imageData || !offscreenCanvas || !offscreenGraphics) return;
 
   if (loadedPPMImage) {
     imageData.data.set(loadedPPMImage.data);
@@ -104,56 +117,77 @@ function draw(){
     imageData.data.fill(255); 
   }
 
-  drawLines();
-  drawRectangles();
-  drawCircles(); 
+  drawLines(imageData.width, imageData.data);
+  drawRectangles(imageData.width, imageData.data);
+  drawCircles(imageData.width, imageData.data); 
 
   if (selectedShape && typeof selectedShape.getHandles === 'function') {
       const handles = selectedShape.getHandles();
       for (const handle of handles) {
-          drawHandle(handle.x, handle.y, imageData.data, canvas.width);
+          drawHandle(handle.x, handle.y, imageData.data, imageData.width);
       }
   }
 
   if (previewLine) {
-    drawLineBresenham(previewLine.x1, previewLine.y1, previewLine.x2, previewLine.y2, canvas, imageData.data, previewLine.color);
+    drawLineBresenham(previewLine.x1, previewLine.y1, previewLine.x2, previewLine.y2, imageData.width, imageData.data, previewLine.color);
   }
   if (previewRect) {
     const rect = previewRect;
-    drawLineBresenham(rect.x1, rect.y1, rect.x1, rect.y2, canvas, imageData.data, rect.color); 
-    drawLineBresenham(rect.x2, rect.y1, rect.x2, rect.y2, canvas, imageData.data, rect.color); 
-    drawLineBresenham(rect.x1, rect.y1, rect.x2, rect.y1, canvas, imageData.data, rect.color);
-    drawLineBresenham(rect.x1, rect.y2, rect.x2, rect.y2, canvas, imageData.data, rect.color); 
+    drawLineBresenham(rect.x1, rect.y1, rect.x1, rect.y2, imageData.width, imageData.data, rect.color); 
+    drawLineBresenham(rect.x2, rect.y1, rect.x2, rect.y2, imageData.width, imageData.data, rect.color); 
+    drawLineBresenham(rect.x1, rect.y1, rect.x2, rect.y1, imageData.width, imageData.data, rect.color);
+    drawLineBresenham(rect.x1, rect.y2, rect.x2, rect.y2, imageData.width, imageData.data, rect.color); 
   }
   if (previewCircle) {
-    drawCircleMidpoint(previewCircle.centerX, previewCircle.centerY, previewCircle.radius, canvas, imageData.data, previewCircle.color);
+    drawCircleMidpoint(previewCircle.centerX, previewCircle.centerY, previewCircle.radius, imageData.width, imageData.data, previewCircle.color);
   }
 
-  graphics.putImageData(imageData, 0, 0);
+  if (offscreenCanvas.width !== imageData.width || offscreenCanvas.height !== imageData.height) {
+      offscreenCanvas.width = imageData.width;
+      offscreenCanvas.height = imageData.height;
+  }
+  offscreenGraphics.putImageData(imageData, 0, 0);
+
+  graphics.save();
+  graphics.setTransform(1, 0, 0, 1, 0, 0);
+  graphics.clearRect(0, 0, canvas.width, canvas.height);
+  graphics.restore();
+
+  graphics.setTransform(scale, 0, 0, scale, viewOffset.x, viewOffset.y);
+
+  graphics.imageSmoothingEnabled = false;
+  graphics.drawImage(offscreenCanvas, 0, 0);
+
+  graphics.setTransform(1, 0, 0, 1, 0, 0);
+  
+  if (scale >= GRID_ZOOM_THRESHOLD) {
+      drawPixelGrid();
+  }
+
   requestAnimationFrame(draw);
 }
 
-function drawLines(){
+function drawLines(bufferWidth: number, bufferData: Uint8ClampedArray){
   const lines = getLines();
   for (const line of lines) {
-    drawLineBresenham(line.x1, line.y1, line.x2, line.y2, canvas!, imageData!.data, line.color);
+    drawLineBresenham(line.x1, line.y1, line.x2, line.y2, bufferWidth, bufferData, line.color);
   }
 }
 
-function drawRectangles(){
+function drawRectangles(bufferWidth: number, bufferData: Uint8ClampedArray){
   const rectangles = getRectangles();
   for (const rect of rectangles) {
-    drawLineBresenham(rect.x1, rect.y1, rect.x1, rect.y2, canvas!, imageData!.data, rect.color); 
-    drawLineBresenham(rect.x2, rect.y1, rect.x2, rect.y2, canvas!, imageData!.data, rect.color); 
-    drawLineBresenham(rect.x1, rect.y1, rect.x2, rect.y1, canvas!, imageData!.data, rect.color);
-    drawLineBresenham(rect.x1, rect.y2, rect.x2, rect.y2, canvas!, imageData!.data, rect.color); 
+    drawLineBresenham(rect.x1, rect.y1, rect.x1, rect.y2, bufferWidth, bufferData, rect.color); 
+    drawLineBresenham(rect.x2, rect.y1, rect.x2, rect.y2, bufferWidth, bufferData, rect.color); 
+    drawLineBresenham(rect.x1, rect.y1, rect.x2, rect.y1, bufferWidth, bufferData, rect.color);
+    drawLineBresenham(rect.x1, rect.y2, rect.x2, rect.y2, bufferWidth, bufferData, rect.color); 
   }
 }
 
-function drawCircles(){
+function drawCircles(bufferWidth: number, bufferData: Uint8ClampedArray){
   const circles = getCircles();
   for (const circle of circles) {
-    drawCircleMidpoint(circle.centerX, circle.centerY, circle.radius, canvas!, imageData!.data, circle.color);
+    drawCircleMidpoint(circle.centerX, circle.centerY, circle.radius, bufferWidth, bufferData, circle.color);
   }
 }
 
@@ -178,7 +212,6 @@ function saveDrawing() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-
 
 function saveAsJPEG() {
     if (!canvas) return;
@@ -251,18 +284,24 @@ function loadFile(event: Event) {
                     setLines([]);
                     setRectangles([]);
                     setCircles([]);
+                    
+                    const ppmData: PpmData = {
+                        width: img.width,
+                        height: img.height,
+                        maxColorValue: 255,
+                        pixels: []
+                    };
+                    
+                    handleLoadedImage(ppmData);
 
-                    canvas!.width = img.width;
-                    canvas!.height = img.height;
+                    offscreenCanvas.width = img.width;
+                    offscreenCanvas.height = img.height;
+                    offscreenGraphics.drawImage(img, 0, 0);
+                    loadedPPMImage = offscreenGraphics.getImageData(0, 0, img.width, img.height);
                     
-                    graphics!.drawImage(img, 0, 0);
-                    
-                    loadedPPMImage = graphics!.getImageData(0, 0, canvas!.width, canvas!.height);
-                    
-                    imageData = graphics!.createImageData(canvas!.width, canvas!.height);
                     console.log("JPEG loaded and set as background");
                 };
-                img.src = e.target?.result as string; 
+                img.src = e.target?.result as string;
             };
             reader.readAsDataURL(file);
             break;
@@ -272,13 +311,62 @@ function loadFile(event: Event) {
             break;
     }
 
-    input.value = ''; 
+    input.value = '';
+}
+
+function handleLoadedImage(ppmData: PpmData) {
+    if (!canvas || !graphics || !imageData) return;
+
+    setLines([]);
+    setRectangles([]);
+    setCircles([]);
+    
+    console.log("6. Image dimensions:", ppmData.width, "x", ppmData.height);
+    
+    imageData = graphics.createImageData(ppmData.width, ppmData.height);
+    data = imageData.data;
+    
+    offscreenCanvas.width = ppmData.width;
+    offscreenCanvas.height = ppmData.height;
+
+    setScale(1);
+    setViewOffset(0, 0);
+
+    console.log("8. World buffer resized to:", ppmData.width, "x", ppmData.height);
+    
+    if (ppmData.pixels.length > 0) {
+        const ppmImageData = graphics.createImageData(ppmData.width, ppmData.height);
+        ppmImageData.data.fill(255); 
+        
+        for (let y = 0; y < ppmData.height; y++) {
+            for (let x = 0; x < ppmData.width; x++) {
+                const pixelIndex = y * ppmData.width + x;
+                if (pixelIndex >= ppmData.pixels.length) continue;
+                
+                const pixel = ppmData.pixels[pixelIndex];
+                if (!pixel) continue;
+
+                const actualIndex = (y * ppmData.width + x) * 4;
+                
+                const r_norm = (pixel.r / ppmData.maxColorValue) * 255;
+                const g_norm = (pixel.g / ppmData.maxColorValue) * 255;
+                const b_norm = (pixel.b / ppmData.maxColorValue) * 255;
+                
+                ppmImageData.data[actualIndex] = r_norm;
+                ppmImageData.data[actualIndex + 1] = g_norm;
+                ppmImageData.data[actualIndex + 2] = b_norm;
+                ppmImageData.data[actualIndex + 3] = 255;
+            }
+        }
+        loadedPPMImage = ppmImageData;
+    } else {
+        loadedPPMImage = null;
+    }
 }
 
 function loadDrawing(jsonString: string) {
-  
   try {
-    const data = JSON.parse(jsonString);
+    var data = JSON.parse(jsonString);
 
     if (!data || !Array.isArray(data.lines) || !Array.isArray(data.rectangles) || !Array.isArray(data.circles)) {
       throw new Error("Wrong JSON format");
@@ -301,10 +389,21 @@ function loadDrawing(jsonString: string) {
     setCircles(newCircles);
     loadedPPMImage = null; 
     
-    if (canvas && graphics) {
-        canvas.width = 1280; 
-        canvas.height = 860;
-        imageData = graphics.createImageData(canvas.width, canvas.height);
+    if (canvas && graphics && imageData) {
+        const defaultWidth = 1280;
+        const defaultHeight = 860;
+        
+        canvas.width = defaultWidth;
+        canvas.height = defaultHeight; 
+        
+        imageData = graphics.createImageData(defaultWidth, defaultHeight);
+        data = imageData.data;
+        
+        offscreenCanvas.width = defaultWidth;
+        offscreenCanvas.height = defaultHeight;
+        
+        setScale(1); 
+        setViewOffset(0, 0);
     }
 
   } catch (error) {
@@ -312,49 +411,91 @@ function loadDrawing(jsonString: string) {
   }
 }
 
-function handleLoadedImage(ppmData: PpmData) {
-    if (!canvas || !graphics) return;
+function handleZoom(event: WheelEvent) {
+    event.preventDefault();
+    if (!canvas) return;
 
-    setLines([]);
-    setRectangles([]);
-    setCircles([]);
-    
-    console.log("6. PPM dimensions:", ppmData.width, "x", ppmData.height);
-    console.log("7. Canvas before:", canvas.width, "x", canvas.height);
-    
-    canvas.width = ppmData.width;
-    canvas.height = ppmData.height;
-    
-    imageData = graphics.createImageData(canvas.width, canvas.height);
-    console.log("8. Canvas resized to:", canvas.width, "x", canvas.height);
-    
-    const ppmImageData = graphics.createImageData(canvas.width, canvas.height);
-    ppmImageData.data.fill(255); 
-    
-    for (let y = 0; y < ppmData.height; y++) {
-        for (let x = 0; x < ppmData.width; x++) {
-            const pixelIndex = y * ppmData.width + x;
-            if (pixelIndex >= ppmData.pixels.length) continue;
-            
-            const pixel = ppmData.pixels[pixelIndex];
-            if (!pixel) continue; 
+    const rect = canvas.getBoundingClientRect();
+    const screenX = event.clientX - rect.left;
+    const screenY = event.clientY - rect.top;
 
-            const actualIndex = (y * canvas.width + x) * 4;
-            
-            const r_norm = (pixel.r / ppmData.maxColorValue) * 255;
-            const g_norm = (pixel.g / ppmData.maxColorValue) * 255;
-            const b_norm = (pixel.b / ppmData.maxColorValue) * 255;
-            
-            ppmImageData.data[actualIndex] = r_norm;
-            ppmImageData.data[actualIndex + 1] = g_norm;
-            ppmImageData.data[actualIndex + 2] = b_norm;
-            ppmImageData.data[actualIndex + 3] = 255;
-        }
-    }
+    const [worldX, worldY] = screenToWorld(screenX, screenY);
     
-    console.log("9. PPM saved to loadedPPMImage");
-    loadedPPMImage = ppmImageData;
+    const zoomFactor = 1.1;
+    const newScale = event.deltaY < 0 ? scale * zoomFactor : scale / zoomFactor;
+    const clampedScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newScale));
+
+    const newOffsetX = screenX - worldX * clampedScale;
+    const newOffsetY = screenY - worldY * clampedScale;
+
+    setScale(clampedScale);
+    setViewOffset(newOffsetX, newOffsetY);
 }
 
+function startPan(event: MouseEvent) {
+    if (event.button !== 1) return; 
+    event.preventDefault();
+    isPanning = true;
+    lastPanX = event.clientX;
+    lastPanY = event.clientY;
+    if (canvas) canvas.style.cursor = 'grabbing';
+}
+
+function pan(event: MouseEvent) {
+    if (!isPanning) return;
+    event.preventDefault();
+    
+    const dx = event.clientX - lastPanX;
+    const dy = event.clientY - lastPanY;
+
+    updateViewOffset(dx, dy);
+
+    lastPanX = event.clientX;
+    lastPanY = event.clientY;
+}
+
+function endPan(event: MouseEvent) {
+    if (!isPanning) return;
+    if (event.type === 'mouseup' && event.button !== 1) return;
+    
+    isPanning = false;
+    if (canvas) canvas.style.cursor = 'default';
+}
+
+function drawPixelGrid() {
+    if (!graphics || !canvas || !imageData) return;
+
+    graphics.font = `${Math.min(10, Math.max(4, scale / 2.5))}px Arial`;
+    graphics.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+
+    const [worldXStart, worldYStart] = screenToWorld(0, 0);
+    const [worldXEnd, worldYEnd] = screenToWorld(canvas.width, canvas.height);
+
+    for (let y = worldYStart; y <= worldYEnd + 1; y++) {
+        for (let x = worldXStart; x <= worldXEnd + 1; x++) {
+            const [screenX, screenY] = worldToScreen(x, y);
+
+            graphics.strokeRect(screenX, screenY, scale, scale);
+            
+            const index = (y * imageData.width + x) * 4;
+            if (index < 0 || index + 2 >= imageData.data.length) continue;
+            
+            const r = imageData.data[index];
+            const g = imageData.data[index + 1];
+            const b = imageData.data[index + 2];
+            
+            if (scale > 20) {
+              const textYOffset = scale / 5;
+              const textXOffset = scale / 10;
+              graphics.fillStyle = 'red';
+              graphics.fillText(`${r}`, screenX + textXOffset, screenY + textYOffset * 2);
+              graphics.fillStyle = 'green';
+              graphics.fillText(`${g}`, screenX + textXOffset, screenY + textYOffset * 3);
+              graphics.fillStyle = 'blue';
+              graphics.fillText(`${b}`, screenX + textXOffset, screenY + textYOffset * 4);
+            }
+        }
+    }
+}
 
 window.onload = init;

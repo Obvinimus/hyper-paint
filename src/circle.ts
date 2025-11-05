@@ -1,6 +1,7 @@
 import './state.ts';
 import { mode, currentColor } from "./state";
 import type { Handle } from "./state";
+import { screenToWorld } from './coords.ts'; 
 
 let startX: number;
 let startY: number;
@@ -50,22 +51,22 @@ export class Circle {
     }
 }
 
-
 function setPixel(x: number, y: number, color: string, width: number, data: Uint8ClampedArray) {
     x = Math.round(x);
     y = Math.round(y);
 
-    const height = data.length / (width * 4);
-    if (x < 0 || x >= width || y < 0 || y >= height) {
+    if (x < 0 || x >= width || y < 0) {
         return;
     }
+    
+    const index = (y * width + x) * 4;
+
+    if (index + 3 >= data.length) return; 
 
     const r = parseInt(color.slice(1, 3), 16);
     const g = parseInt(color.slice(3, 5), 16);
     const b = parseInt(color.slice(5, 7), 16);
     
-    const index = (y * width + x) * 4;
-
     data[index] = r;
     data[index + 1] = g;
     data[index + 2] = b;
@@ -73,14 +74,14 @@ function setPixel(x: number, y: number, color: string, width: number, data: Uint
 }
 
 
-export function drawCircleMidpoint(centerX: number, centerY: number, radius: number, canvas: HTMLCanvasElement, data: Uint8ClampedArray, color: string) {
+export function drawCircleMidpoint(centerX: number, centerY: number, radius: number, bufferWidth: number, data: Uint8ClampedArray, color: string) {
     let r = Math.round(radius);
     let x = r;
     let y = 0;
     let P = 1 - r; 
 
     const plotCirclePoints = (cx: number, cy: number, x_rel: number, y_rel: number) => {
-        const w = canvas.width; 
+        const w = bufferWidth; 
         setPixel(cx + x_rel, cy + y_rel, color, w, data);
         setPixel(cx - x_rel, cy + y_rel, color, w, data);
         setPixel(cx + x_rel, cy - y_rel, color, w, data);
@@ -91,9 +92,9 @@ export function drawCircleMidpoint(centerX: number, centerY: number, radius: num
         setPixel(cx - y_rel, cy - x_rel, color, w, data);
     };
 
-    while (x >= y) {
-        plotCirclePoints(Math.round(centerX), Math.round(centerY), x, y);
-        
+    plotCirclePoints(Math.round(centerX), Math.round(centerY), x, y);
+
+    while (x > y) {
         y++;
         if (P <= 0) {
             P = P + 2 * y + 1;
@@ -101,6 +102,10 @@ export function drawCircleMidpoint(centerX: number, centerY: number, radius: num
             x--;
             P = P + 2 * y - 2 * x + 1;
         }
+        
+        if (x < y) break;
+        
+        plotCirclePoints(Math.round(centerX), Math.round(centerY), x, y);
     }
 }
 
@@ -108,21 +113,25 @@ export let previewCircle: Circle | null = null;
 
 export function setupCircleDrawing(canvas: HTMLCanvasElement) {
     canvas.addEventListener('mousedown', (event) => {
-        if (mode != 2) return; 
+        if (mode != 2 || event.button !== 0) return; 
+
+        const rect = canvas.getBoundingClientRect();
+        const screenX = event.clientX - rect.left;
+        const screenY = event.clientY - rect.top;
+        const [worldX, worldY] = screenToWorld(screenX, screenY);
 
         if (isDrawing === false) {
-            startX = event.offsetX;
-            startY = event.offsetY;
+            startX = worldX;
+            startY = worldY;
             isDrawing = true;
         } else {
             isDrawing = false;
-            const endX = event.offsetX;
-            const endY = event.offsetY;
+            const endX = worldX;
+            const endY = worldY;
 
             const dx = endX - startX;
             const dy = endY - startY;
             const radius = Math.sqrt(dx * dx + dy * dy);
-            
             
             circles.push(new Circle(startX, startY, radius, currentColor));
 
@@ -136,11 +145,13 @@ export function setupCircleDrawing(canvas: HTMLCanvasElement) {
             return;
         }
         
-        const currentX = event.offsetX;
-        const currentY = event.offsetY;
+        const rect = canvas.getBoundingClientRect();
+        const screenX = event.clientX - rect.left;
+        const screenY = event.clientY - rect.top;
+        const [worldX, worldY] = screenToWorld(screenX, screenY);
         
-        const dx = currentX - startX;
-        const dy = currentY - startY;
+        const dx = worldX - startX;
+        const dy = worldY - startY;
         const radius = Math.sqrt(dx * dx + dy * dy);
 
         previewCircle = new Circle(startX, startY, radius, currentColor);

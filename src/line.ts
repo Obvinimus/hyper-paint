@@ -2,6 +2,7 @@ import './main.ts'
 import { mode, currentColor } from './state.ts';
 import { changePixelColor } from './pixel.ts';
 import type { Handle } from "./state";
+import { screenToWorld } from './coords.ts';
 
 export class Line {
     public readonly type = 'line';
@@ -88,7 +89,7 @@ export let startY = 0;
 export let previewLine: Line | null = null;
 
 
-export function drawLineBresenham(x1: number, y1: number, x2: number, y2: number, canvas?: HTMLCanvasElement, data?: Uint8ClampedArray, color?: string) {
+export function drawLineBresenham(x1: number, y1: number, x2: number, y2: number, bufferWidth: number, data: Uint8ClampedArray, color?: string) {
     let dx = Math.abs(x2 - x1);
     let dy = -Math.abs(y2 - y1); 
     let sx = (x1 < x2) ? 1 : -1;
@@ -98,22 +99,22 @@ export function drawLineBresenham(x1: number, y1: number, x2: number, y2: number
     let e2; 
 
     while (true) {
-        changePixelColor(x1, y1, canvas!.width, data!, color || currentColor);
+        changePixelColor(x1, y1, bufferWidth, data, color || currentColor);
 
-        if (x1 === x2 && y1 === y2) {
+        if (Math.round(x1) === Math.round(x2) && Math.round(y1) === Math.round(y2)) {
             break;
         }
 
         e2 = 2 * err;
 
         if (e2 >= dy) { 
-            if (x1 === x2) break; 
+            if (Math.round(x1) === Math.round(x2)) break; 
             err += dy; 
             x1 += sx;  
         }
 
         if (e2 <= dx) { 
-            if (y1 === y2) break; 
+            if (Math.round(y1) === Math.round(y2)) break; 
             err += dx; 
             y1 += sy;  
         }
@@ -122,16 +123,21 @@ export function drawLineBresenham(x1: number, y1: number, x2: number, y2: number
 
 export function setupLineDrawing(canvas: HTMLCanvasElement) {
     canvas.addEventListener('mousedown', (event) => {
-        if (mode != 0) return;
+        if (mode != 0 || event.button !== 0) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const screenX = event.clientX - rect.left;
+        const screenY = event.clientY - rect.top;
+        const [worldX, worldY] = screenToWorld(screenX, screenY);
 
         if (isDrawing === false) {
-            startX = event.offsetX;
-            startY = event.offsetY;
+            startX = worldX;
+            startY = worldY;
             isDrawing = true;
         } else {
             isDrawing = false;
-            const endX = event.offsetX;
-            const endY = event.offsetY;
+            const endX = worldX;
+            const endY = worldY;
             lines.push(new Line(startX, startY, endX, endY, currentColor));
             
             previewLine = null; 
@@ -144,10 +150,12 @@ export function setupLineDrawing(canvas: HTMLCanvasElement) {
             return;
         }
 
-        const currentX = event.offsetX;
-        const currentY = event.offsetY;
+        const rect = canvas.getBoundingClientRect();
+        const screenX = event.clientX - rect.left;
+        const screenY = event.clientY - rect.top;
+        const [worldX, worldY] = screenToWorld(screenX, screenY);
         
-        previewLine = new Line(startX, startY, currentX, currentY, currentColor);
+        previewLine = new Line(startX, startY, worldX, worldY, currentColor);
     });
 }
 
@@ -162,4 +170,3 @@ export function clearLines(): void {
 export function setLines(newLines: Line[]) {
   lines = newLines;
 }
-

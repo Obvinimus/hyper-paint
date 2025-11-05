@@ -1,5 +1,6 @@
 import { mode, currentColor } from "./state";
 import type { Handle } from "./state";
+import { screenToWorld } from './coords.ts';
 
 let startX: number;
 let startY: number;
@@ -104,21 +105,25 @@ export let previewRect: Rectangle | null = null;
 
 export function setupRectangleDrawing(canvas: HTMLCanvasElement) {
     canvas.addEventListener('mousedown', (event) => {
-        if (mode != 1) return;
+        if (mode != 1 || event.button !== 0) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const screenX = event.clientX - rect.left;
+        const screenY = event.clientY - rect.top;
+        const [worldX, worldY] = screenToWorld(screenX, screenY);
 
         if (isDrawing === false) {
-            startX = event.offsetX;
-            startY = event.offsetY;
+            startX = worldX;
+            startY = worldY;
             isDrawing = true;
         } else {
             isDrawing = false;
-            const endX = event.offsetX;
-            const endY = event.offsetY;
+            const endX = worldX;
+            const endY = worldY;
             
             const newRect = new Rectangle(startX, startY, endX, endY, currentColor);
             rectangles.push(newRect);
 
-            
             previewRect = null;
         }
     });
@@ -129,10 +134,12 @@ export function setupRectangleDrawing(canvas: HTMLCanvasElement) {
             return;
         }
         
-        const currentX = event.offsetX;
-        const currentY = event.offsetY;
+        const rect = canvas.getBoundingClientRect();
+        const screenX = event.clientX - rect.left;
+        const screenY = event.clientY - rect.top;
+        const [worldX, worldY] = screenToWorld(screenX, screenY);
 
-        previewRect = new Rectangle(startX, startY, currentX, currentY, currentColor);
+        previewRect = new Rectangle(startX, startY, worldX, worldY, currentColor);
     });
 }
 
