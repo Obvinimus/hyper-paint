@@ -6,7 +6,7 @@ import { getLines, setupLineDrawing, drawLineBresenham, previewLine, setLines, L
 import { setupRectangleDrawing, getRectangles, previewRect, setRectangles, Rectangle } from './rectangle.ts';
 import { setupCircleDrawing, getCircles, drawCircleMidpoint, previewCircle, setCircles, Circle } from './circle.ts';
 import { initPropertiesPanel, updatePropertiesPanel } from './properties.ts';
-import {  parsePPMP3, drawPPMOnCanvas } from './ppm.ts';
+import {  parsePPMP3 } from './ppm.ts';
 
 
 let graphics: CanvasRenderingContext2D | null;

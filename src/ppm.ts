@@ -33,32 +33,3 @@ export function parsePPMP3(data: string){
     console.log("parsePPMP3: Total pixels parsed:", pixels.length);
     return { width, height, maxColorValue, pixels };
 }
-
-export function drawPPMOnCanvas(canvas: HTMLCanvasElement, ppmData: { width: number; height: number; maxColorValue: number; pixels: { r: number; g: number; b: number }[] }) {
-    console.log("drawPPMOnCanvas: Starting draw");
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-        console.error("Failed to get canvas context");
-        return;
-    }
-    const imageData = ctx.createImageData(ppmData.width, ppmData.height);
-    const canvasData = imageData.data;
-    console.log("drawPPMOnCanvas: ImageData created, length:", canvasData.length);
-    
-    let canvasIndex = 0; 
-    for (let i = 0; i < ppmData.pixels.length; i++) {
-        const pixel = ppmData.pixels[i];
-        const r_norm = (pixel.r / ppmData.maxColorValue) * 255;
-        const g_norm = (pixel.g / ppmData.maxColorValue) * 255;
-        const b_norm = (pixel.b / ppmData.maxColorValue) * 255;
-        canvasData[canvasIndex]     = r_norm;
-        canvasData[canvasIndex + 1] = g_norm;
-        canvasData[canvasIndex + 2] = b_norm; 
-        canvasData[canvasIndex + 3] = 255;
-        
-        canvasIndex += 4;
-    }
-    console.log("drawPPMOnCanvas: Putting image data");
-    ctx.putImageData(imageData, 0, 0);
-    console.log("drawPPMOnCanvas: Done");
-}
