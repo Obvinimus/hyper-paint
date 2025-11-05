@@ -9,6 +9,7 @@ import { initPropertiesPanel, updatePropertiesPanel } from './properties.ts';
 import { parsePPMP3, parsePPMP6 } from './ppm.ts';
 import { screenToWorld, worldToScreen } from './coords.ts';
 import type { PpmData } from './ppm.ts';
+import {mode} from './state.ts';
 
 let graphics: CanvasRenderingContext2D | null;
 let canvas: HTMLCanvasElement | null;
@@ -22,6 +23,7 @@ let offscreenGraphics: CanvasRenderingContext2D;
 let isPanning = false;
 let lastPanX = 0;
 let lastPanY = 0;
+let isSpacebarPressed = false;
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 50;
 const GRID_ZOOM_THRESHOLD = 15;
@@ -90,6 +92,28 @@ function init() {
   setupCircleDrawing(canvas);
   setupSelection(canvas);
   initPropertiesPanel();
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === ' ' || event.code === 'Space') {
+        event.preventDefault(); // Zapobiegaj przewijaniu strony
+        isSpacebarPressed = true;
+        if (canvas && !isPanning && mode >= 3) { 
+             canvas.style.cursor = 'grab';
+        }
+    }
+});
+
+window.addEventListener('keyup', (event) => {
+    if (event.key === ' ' || event.code === 'Space') {
+        isSpacebarPressed = false;
+        if (canvas) {
+            if (isPanning) {
+                isPanning = false;
+            }
+            canvas.style.cursor = 'default';
+        }
+    }
+});
 
   canvas.addEventListener('wheel', handleZoom, { passive: false });
   canvas.addEventListener('mousedown', startPan, { passive: false });
@@ -433,7 +457,12 @@ function handleZoom(event: WheelEvent) {
 }
 
 function startPan(event: MouseEvent) {
-    if (event.button !== 1) return; 
+    const isPanTrigger = event.button === 1 || (event.button === 0 && isSpacebarPressed);
+    
+    if (!isPanTrigger) return;
+
+    if (isSpacebarPressed && mode < 3) return;
+
     event.preventDefault();
     isPanning = true;
     lastPanX = event.clientX;
@@ -456,10 +485,15 @@ function pan(event: MouseEvent) {
 
 function endPan(event: MouseEvent) {
     if (!isPanning) return;
-    if (event.type === 'mouseup' && event.button !== 1) return;
+
+    const isPanRelease = event.type === 'mouseup' && (event.button === 1 || event.button === 0);
     
-    isPanning = false;
-    if (canvas) canvas.style.cursor = 'default';
+    if (isPanRelease || event.type === 'mouseleave') {
+        isPanning = false;
+        if (canvas) {
+            canvas.style.cursor = isSpacebarPressed ? 'grab' : 'default';
+        }
+    }
 }
 
 function drawPixelGrid() {
