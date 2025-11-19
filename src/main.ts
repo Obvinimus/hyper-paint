@@ -10,6 +10,7 @@ import { parsePPMP3, parsePPMP6 } from './ppm.ts';
 import { screenToWorld, worldToScreen } from './coords.ts';
 import type { PpmData } from './ppm.ts';
 import {mode} from './state.ts';
+import { setupColorPicker } from './colorpicker.ts';
 
 let graphics: CanvasRenderingContext2D | null;
 let canvas: HTMLCanvasElement | null;
@@ -28,10 +29,7 @@ const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 50;
 const GRID_ZOOM_THRESHOLD = 15;
 
-const colorPicker = document.getElementById('colorPicker') as HTMLInputElement;
-colorPicker.addEventListener('input', (event) => {
-    setColor(colorPicker.value);
-});
+
 
 function mousePos(canvas: HTMLCanvasElement) {
   canvas.addEventListener('mousemove', (event) => {
@@ -92,6 +90,7 @@ function init() {
   setupCircleDrawing(canvas);
   setupSelection(canvas);
   initPropertiesPanel();
+  setupColorPicker();
 
   window.addEventListener('keydown', (event) => {
     if (event.key === ' ' || event.code === 'Space') {

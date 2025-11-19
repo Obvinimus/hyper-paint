@@ -1,17 +1,41 @@
 import './pixel.ts'
 import { changePixelColor } from './pixel.ts';
 import { mode, currentColor } from './state.ts';
+import { screenToWorld } from './coords.ts'; 
 
 export function setupPixelDrawing(canvas: HTMLCanvasElement, graphics: CanvasRenderingContext2D, imageData: ImageData) {
-  canvas.addEventListener('click', (event) => {
-    if(mode != 3) return;
+  
+  let isPenDrawing = false;
+
+  const drawPixel = (event: MouseEvent) => {
+    if (mode != 3 || !imageData) return;
+    
     const rect = canvas.getBoundingClientRect();
-    const x = Math.floor(event.clientX - rect.left);
-    const y = Math.floor(event.clientY - rect.top);
-    if (!canvas) return;
-    if (!graphics) return;
-    const data = imageData.data;
-    changePixelColor(x, y, canvas.width, data, currentColor);
-    graphics.putImageData(imageData, 0, 0);
+    const screenX = event.clientX - rect.left;
+    const screenY = event.clientY - rect.top;
+    const [worldX, worldY] = screenToWorld(screenX, screenY);
+
+    changePixelColor(worldX, worldY, imageData.width, imageData.data, currentColor);
+    
+  };
+
+  canvas.addEventListener('mousedown', (event) => {
+    if (mode != 3 || event.button !== 0) return;
+    isPenDrawing = true;
+    drawPixel(event); 
+  });
+  
+  canvas.addEventListener('mousemove', (event) => {
+    if (!isPenDrawing || mode != 3) return;
+    drawPixel(event); 
+  });
+
+  canvas.addEventListener('mouseup', (event) => {
+    if (event.button !== 0) return;
+    isPenDrawing = false;
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    isPenDrawing = false;
   });
 }

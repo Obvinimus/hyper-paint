@@ -10,61 +10,68 @@
     <div id="app" class="w-screen h-screen bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700
     dark:from-gray-800 dark:via-gray-900 dark:to-black
     bg-[length:400%_400%]">
-      <div id="toolbar" class="fixed top-0 left-0 bg-gray-900 p-2 flex space-x-2 w-screen h-30">
-        <button id="pencilTool" class="bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 
-  text-indigo-700 hover:text-white
-    hover:rounded-xl rounded-3xl
-    transition-all duration-300 ease-linear
-    cursor-pointer shadow-lg">
-          <img 
-            src="src/assests/pencil-tool-icon.svg" 
-            alt="Narzędzie Ołówek" 
-            class="w-25 h-25"
-          />
-        <button id="lineTool" class="bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 
-  text-indigo-700 hover:text-white
-    hover:rounded-xl rounded-3xl
-    transition-all duration-300 ease-linear
-    cursor-pointer shadow-lg">
-          <img 
-            src="src/assests/line-tool-icon.svg" 
-            alt="Narzędzie Linia" 
-            class="w-25 h-25"
-          />  
-        </button>
-        <button id="rectTool" class="bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 
-  text-indigo-700 hover:text-white
-    hover:rounded-xl rounded-3xl
-    transition-all duration-300 ease-linear
-    cursor-pointer shadow-lg">
-          <img 
-            src="src/assests/rectangle-tool-icon.svg" 
-            alt="Narzędzie Prostokąt" 
-            class="w-25 h-25"
-          />  
-        </button>
-        <button id="circleTool" class=" bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 
-  text-indigo-700 hover:text-white
-    hover:rounded-xl rounded-3xl
-    transition-all duration-300 ease-linear
-    cursor-pointer shadow-lg
-">
-          <img 
-            src="src/assests/circle-tool-icon.svg" 
-            alt="Narzędzie Koło" 
-            class="w-25 h-25"
-          />
-          <button id="grabTool" class="bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 
-  text-indigo-700 hover:text-white
-    hover:rounded-xl rounded-3xl
-    transition-all duration-300 ease-linear
-    cursor-pointer shadow-lg">
-            <img 
-              src="src/assests/grab-tool-icon.svg" 
-              alt="Narzędzie Chwytak" 
-              class="w-25 h-25"/>
-          </button>
-        <input type="color" id="colorPicker" class="ml-4" value="#000000" />
+<div id="toolbar" class="fixed top-0 left-0 bg-gray-900 p-2 flex flex-wrap items-center gap-4 w-full h-auto min-h-[80px] shadow-xl z-50">
+        
+        <div class="flex space-x-2">
+            <button id="pencilTool" class="bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 text-indigo-700 hover:text-white rounded-full transition-all duration-300 ease-linear cursor-pointer shadow-lg w-12 h-12 flex items-center justify-center p-0" title="Ołówek">
+            <img src="src/assests/pencil-tool-icon.svg" alt="Ołówek" class="w-10 h-10"/>
+            </button>
+            <button id="lineTool" class="bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 text-indigo-700 hover:text-white rounded-full transition-all duration-300 ease-linear cursor-pointer shadow-lg w-12 h-12 flex items-center justify-center p-0" title="Linia">
+            <img src="src/assests/line-tool-icon.svg" alt="Linia" class="w-10 h-10"/>  
+            </button>
+            <button id="rectTool" class="bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 text-indigo-700 hover:text-white rounded-full transition-all duration-300 ease-linear cursor-pointer shadow-lg w-12 h-12 flex items-center justify-center p-0" title="Prostokąt">
+            <img src="src/assests/rectangle-tool-icon.svg" alt="Prostokąt" class="w-10 h-10"/>  
+            </button>
+            <button id="circleTool" class="bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 text-indigo-700 hover:text-white rounded-full transition-all duration-300 ease-linear cursor-pointer shadow-lg w-12 h-12 flex items-center justify-center p-0" title="Koło">
+            <img src="src/assests/circle-tool-icon.svg" alt="Koło" class="w-10 h-10"/>
+            </button>
+            <button id="grabTool" class="bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 text-indigo-700 hover:text-white rounded-full transition-all duration-300 ease-linear cursor-pointer shadow-lg w-12 h-12 flex items-center justify-center p-0" title="Chwytak">
+                <img src="src/assests/grab-tool-icon.svg" alt="Chwytak" class="w-10 h-10"/>
+            </button>
+        </div>
+
+        <button id="colorPickerButton" class="w-12 h-12 rounded-full border-2 border-white shadow-lg cursor-pointer hover:scale-110 transition-transform" style="background-color: #000000;" title="Wybierz kolor"></button>
+
+        <div id="colorPickerPopup" class="hidden fixed bg-slate-800 p-4 rounded-lg border border-gray-600 text-white text-xs shadow-2xl z-[60]">
+            <div class="flex gap-3 items-start">
+            
+            <div class="flex flex-col space-y-2">
+                <div class="relative border border-gray-500 cursor-crosshair w-[150px] h-[100px] bg-black overflow-hidden">
+                    <canvas id="sv-canvas" width="150" height="100" class="absolute top-0 left-0"></canvas>
+                    <div id="picker-indicator" class="absolute w-3 h-3 border-2 border-white rounded-full shadow-sm pointer-events-none transform -translate-x-1/2 -translate-y-1/2 box-border" style="top: 0; left: 0;"></div>
+                </div>
+                
+                <input type="range" id="hue-slider" min="0" max="360" value="0" class="w-[150px] h-3 appearance-none rounded-full cursor-pointer" 
+                       style="background: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red);">
+                
+                <div id="colorPreview" class="w-[150px] h-6 rounded border border-white bg-black shadow-inner"></div>
+            </div>
+
+            <div class="grid grid-cols-[auto_1fr_auto_1fr] gap-x-2 gap-y-1 items-center">
+                <div class="col-span-2 font-bold text-center border-b border-gray-600 mb-1 text-gray-300">RGB</div>
+                <div class="col-span-2 font-bold text-center border-b border-gray-600 mb-1 text-gray-300">CMYK</div>
+
+                <span class="text-red-400 font-bold">R</span>
+                <input type="number" id="r-input" class="w-10 bg-gray-700 text-center rounded border border-gray-600 focus:border-blue-500 outline-none" min="0" max="255">
+                <span class="text-cyan-400 font-bold ml-2">C</span>
+                <input type="number" id="c-input" class="w-10 bg-gray-700 text-center rounded border border-gray-600 focus:border-blue-500 outline-none" min="0" max="100">
+
+                <span class="text-green-400 font-bold">G</span>
+                <input type="number" id="g-input" class="w-10 bg-gray-700 text-center rounded border border-gray-600 focus:border-blue-500 outline-none" min="0" max="255">
+                <span class="text-pink-400 font-bold ml-2">M</span>
+                <input type="number" id="m-input" class="w-10 bg-gray-700 text-center rounded border border-gray-600 focus:border-blue-500 outline-none" min="0" max="100">
+
+                <span class="text-blue-400 font-bold">B</span>
+                <input type="number" id="b-input" class="w-10 bg-gray-700 text-center rounded border border-gray-600 focus:border-blue-500 outline-none" min="0" max="255">
+                <span class="text-yellow-400 font-bold ml-2">Y</span>
+                <input type="number" id="y-input" class="w-10 bg-gray-700 text-center rounded border border-gray-600 focus:border-blue-500 outline-none" min="0" max="100">
+
+                <div class="col-span-2"></div>
+                <span class="text-gray-400 font-bold ml-2">K</span>
+                <input type="number" id="k-input" class="w-10 bg-gray-700 text-center rounded border border-gray-600 focus:border-blue-500 outline-none" min="0" max="100">
+            </div>
+        </div>
+        </div>
       </div>
       <canvas id="maincanvas" width="1280" height="860" class="mt-30"></canvas>
 <div id="fileToolbar" class="fixed bottom-0 left-0 bg-gray-900 p-2 flex space-x-4 items-center w-screen">
@@ -81,7 +88,7 @@
     <button id="loadButton" title="Wczytaj (JSON, PPM, JPEG)" class="text-amber-50">Wczytaj Plik</button>
 </div>
         <div id="properties-panel" 
-     class="fixed top-0 right-0 h-full w-64 bg-gray-100 p-4 shadow-lg border-l border-gray-300 transform translate-x-full transition-transform z-10">
+     class="fixed top-20 right-0 h-[calc(100%-5rem)] w-64 bg-gray-100 p-4 shadow-lg border-l border-gray-300 transform translate-x-full transition-transform z-10 overflow-y-auto">
     
     <h3 class="text-lg font-bold mb-4">Właściwości</h3>
 
