@@ -1,12 +1,20 @@
-import { selectedShape } from "./grabtool"; 
-import { mode, currentColor } from "./state"; 
-import { Line, getLines } from "./line"; 
-import { Rectangle, getRectangles } from "./rectangle"; 
-import { Circle, getCircles } from "./circle"; 
+import { selectedShape } from "./grabtool";
+import { mode, currentColor } from "./state";
+import { Line, getLines } from "./line";
+import { Rectangle, getRectangles } from "./rectangle";
+import { Circle, getCircles } from "./circle";
+import {
+    setSliceEnabled,
+    setSliceAxis,
+    setSlicePosition,
+    setAutoRotate,
+    resetRotation as cubeResetRotation
+} from './rgbcube';
 
 let panel: HTMLElement;
 let noSelection: HTMLElement;
 let lineProps: HTMLElement, rectProps: HTMLElement, circleProps: HTMLElement, commonProps: HTMLElement;
+let rgbCubeProps: HTMLElement;
 
 let lineX1: HTMLInputElement, lineY1: HTMLInputElement, lineX2: HTMLInputElement, lineY2: HTMLInputElement;
 
@@ -27,7 +35,8 @@ export function initPropertiesPanel() {
     rectProps = document.getElementById('rect-props') as HTMLElement;
     circleProps = document.getElementById('circle-props') as HTMLElement;
     commonProps = document.getElementById('common-props') as HTMLElement;
-    
+    rgbCubeProps = document.getElementById('rgb-cube-props') as HTMLElement;
+
     lineX1 = document.getElementById('line-x1') as HTMLInputElement;
     lineY1 = document.getElementById('line-y1') as HTMLInputElement;
     lineX2 = document.getElementById('line-x2') as HTMLInputElement;
@@ -48,12 +57,69 @@ export function initPropertiesPanel() {
 
     updateButton.addEventListener('click', applyPropertyChanges);
     createButton.addEventListener('click', createShapeFromProperties);
+
+    // RGB Cube event listeners
+    setupRGBCubeListeners();
+}
+
+function setupRGBCubeListeners() {
+    const sliceEnabled = document.getElementById('cube-slice-enabled') as HTMLInputElement;
+    const sliceAxis = document.getElementById('cube-slice-axis') as HTMLSelectElement;
+    const slicePosition = document.getElementById('cube-slice-position') as HTMLInputElement;
+    const sliceValue = document.getElementById('cube-slice-value') as HTMLSpanElement;
+    const autoRotate = document.getElementById('cube-auto-rotate') as HTMLInputElement;
+    const resetButton = document.getElementById('cube-reset-rotation') as HTMLButtonElement;
+
+    sliceEnabled?.addEventListener('change', (e) => {
+        const target = e.target as HTMLInputElement;
+        setSliceEnabled(target.checked);
+    });
+
+    sliceAxis?.addEventListener('change', (e) => {
+        const target = e.target as HTMLSelectElement;
+        setSliceAxis(target.value as 'x' | 'y' | 'z');
+    });
+
+    slicePosition?.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        const value = parseFloat(target.value) / 100;
+        setSlicePosition(value);
+        if (sliceValue) {
+            sliceValue.textContent = target.value + '%';
+        }
+    });
+
+    autoRotate?.addEventListener('change', (e) => {
+        const target = e.target as HTMLInputElement;
+        setAutoRotate(target.checked);
+    });
+
+    resetButton?.addEventListener('click', () => {
+        cubeResetRotation();
+    });
 }
 
 function clearInputFields() {
     lineX1.value = ''; lineY1.value = ''; lineX2.value = ''; lineY2.value = '';
     rectX1.value = ''; rectY1.value = ''; rectWidth.value = ''; rectHeight.value = '';
     circleCX.value = ''; circleCY.value = ''; circleRadius.value = '';
+}
+
+export function showRGBCubeProperties() {
+    lineProps.classList.add('hidden');
+    rectProps.classList.add('hidden');
+    circleProps.classList.add('hidden');
+    commonProps.classList.add('hidden');
+    noSelection.classList.add('hidden');
+    updateButton.classList.add('hidden');
+    createButton.classList.add('hidden');
+    rgbCubeProps.classList.remove('hidden');
+    panel.classList.remove('translate-x-full');
+}
+
+export function hideRGBCubeProperties() {
+    rgbCubeProps.classList.add('hidden');
+    panel.classList.add('translate-x-full');
 }
 
 export function updatePropertiesPanel(shape: any) {
@@ -64,7 +130,8 @@ export function updatePropertiesPanel(shape: any) {
     noSelection.classList.add('hidden');
     updateButton.classList.add('hidden');
     createButton.classList.add('hidden');
-    
+    rgbCubeProps.classList.add('hidden');
+
     if (shape) {
         panel.classList.remove('translate-x-full');
         commonProps.classList.remove('hidden');

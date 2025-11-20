@@ -16,6 +16,8 @@
     "vite": "^7.1.7"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.15"
+    "@tailwindcss/vite": "^4.1.15",
+    "@types/three": "^0.181.0",
+    "three": "^0.181.2"
   }
 }

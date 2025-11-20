@@ -32,6 +32,10 @@
 
         <button id="colorPickerButton" class="w-12 h-12 rounded-full border-2 border-white shadow-lg cursor-pointer hover:scale-110 transition-transform" style="background-color: #000000;" title="Wybierz kolor"></button>
 
+        <button id="rgbCubeButton" class="bg-gradient-to-br from-red-500 via-green-500 to-blue-500 hover:scale-110 rounded-full transition-all duration-300 ease-linear cursor-pointer shadow-lg w-12 h-12 flex items-center justify-center p-0 border-2 border-white" title="Kostka RGB 3D">
+            <span class="text-white font-bold text-xs">RGB</span>
+        </button>
+
         <div id="colorPickerPopup" class="hidden fixed bg-slate-800 p-4 rounded-lg border border-gray-600 text-white text-xs shadow-2xl z-[60]">
             <div class="flex gap-3 items-start">
             
@@ -144,6 +148,45 @@
         </div>
     </div>
 
+    <div id="rgb-cube-props" class="hidden space-y-3">
+        <div>
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" id="cube-slice-enabled" class="w-4 h-4">
+                <span class="text-sm font-medium">Pokaż przekrój</span>
+            </label>
+        </div>
+
+        <div id="cube-slice-controls" class="space-y-2 pl-2 border-l-2 border-gray-300">
+            <div>
+                <label class="block text-sm font-medium mb-1">Oś przekroju</label>
+                <select id="cube-slice-axis" class="w-full p-1 border rounded text-sm">
+                    <option value="x">X - Czerwony (R)</option>
+                    <option value="y" selected>Y - Zielony (G)</option>
+                    <option value="z">Z - Niebieski (B)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1">
+                    Pozycja: <span id="cube-slice-value" class="font-normal text-gray-600">50%</span>
+                </label>
+                <input type="range" id="cube-slice-position" min="0" max="100" value="50"
+                       class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+            </div>
+        </div>
+
+        <div class="pt-2 border-t border-gray-300">
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" id="cube-auto-rotate" class="w-4 h-4">
+                <span class="text-sm font-medium">Auto-rotacja</span>
+            </label>
+        </div>
+
+        <button id="cube-reset-rotation" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 text-sm">
+            Resetuj rotację
+        </button>
+    </div>
+
     <div id="common-props" class="hidden mt-4 space-y-2">
            <div>
                 <label class="block text-sm font-medium">Kolor</label>
@@ -163,3 +206,4 @@
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
+

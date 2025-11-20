@@ -5,12 +5,27 @@ import { setupSelection, selectedShape, drawHandle } from './grabtool.ts';
 import { getLines, setupLineDrawing, drawLineBresenham, previewLine, setLines, Line } from './line.ts';
 import { setupRectangleDrawing, getRectangles, previewRect, setRectangles, Rectangle } from './rectangle.ts';
 import { setupCircleDrawing, getCircles, drawCircleMidpoint, previewCircle, setCircles, Circle } from './circle.ts';
-import { initPropertiesPanel, updatePropertiesPanel } from './properties.ts';
+import { initPropertiesPanel, updatePropertiesPanel, showRGBCubeProperties, hideRGBCubeProperties } from './properties.ts';
 import { parsePPMP3, parsePPMP6 } from './ppm.ts';
 import { screenToWorld, worldToScreen } from './coords.ts';
 import type { PpmData } from './ppm.ts';
 import {mode} from './state.ts';
 import { setupColorPicker } from './colorpicker.ts';
+import {
+    setupRGBCube,
+    toggleRGBCube,
+    isRGBCubeVisible,
+    renderRGBCube,
+    setRGBCubePosition,
+    getRGBCubeSize,
+    getRGBCubeWorldPosition,
+    handleRGBCubeMouseDown,
+    handleRGBCubeMouseMove,
+    handleRGBCubeMouseUp,
+    handleRGBCubePanStart,
+    handleRGBCubePanMove,
+    isRGBCubePanning,
+} from './rgbcube.ts';
 
 let graphics: CanvasRenderingContext2D | null;
 let canvas: HTMLCanvasElement | null;
@@ -66,6 +81,21 @@ document.getElementById('grabTool')?.addEventListener('click', () => {
   updatePropertiesPanel(null); 
 });
 
+document.getElementById('rgbCubeButton')?.addEventListener('click', () => {
+  if (!isRGBCubeVisible() && imageData) {
+    const centerX = Math.floor(imageData.width / 2);
+    const centerY = Math.floor(imageData.height / 2);
+    setRGBCubePosition(centerX, centerY);
+  }
+  toggleRGBCube();
+
+  if (isRGBCubeVisible()) {
+    showRGBCubeProperties();
+  } else {
+    hideRGBCubeProperties();
+  }
+});
+
 function init() {
   canvas = document.getElementById('maincanvas') as HTMLCanvasElement;
   graphics = canvas.getContext('2d', { willReadFrequently: true });
@@ -91,10 +121,11 @@ function init() {
   setupSelection(canvas);
   initPropertiesPanel();
   setupColorPicker();
+  setupRGBCube();
 
   window.addEventListener('keydown', (event) => {
     if (event.key === ' ' || event.code === 'Space') {
-        event.preventDefault(); // Zapobiegaj przewijaniu strony
+        event.preventDefault(); 
         isSpacebarPressed = true;
         if (canvas && !isPanning && mode >= 3) { 
              canvas.style.cursor = 'grab';
@@ -115,10 +146,59 @@ window.addEventListener('keyup', (event) => {
 });
 
   canvas.addEventListener('wheel', handleZoom, { passive: false });
-  canvas.addEventListener('mousedown', startPan, { passive: false });
-  canvas.addEventListener('mousemove', pan, { passive: false });
-  canvas.addEventListener('mouseup', endPan);
-  canvas.addEventListener('mouseleave', endPan);
+
+  canvas.addEventListener('mousedown', (event) => {
+    if (!canvas) return;
+
+    if (isRGBCubeVisible()) {
+      const rect = canvas.getBoundingClientRect();
+      const screenX = event.clientX - rect.left;
+      const screenY = event.clientY - rect.top;
+      const [worldX, worldY] = screenToWorld(screenX, screenY);
+
+      const isPanTrigger = event.button === 1 || (event.button === 0 && isSpacebarPressed);
+
+      if (isPanTrigger) {
+        const cubeHandled = handleRGBCubePanStart(worldX, worldY);
+        if (cubeHandled) {
+          event.preventDefault();
+          return; 
+        }
+      } else if (event.button === 0) {
+        handleRGBCubeMouseDown(worldX, worldY);
+      }
+    }
+
+    startPan(event);
+  }, { passive: false });
+
+  canvas.addEventListener('mousemove', (event) => {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const screenX = event.clientX - rect.left;
+    const screenY = event.clientY - rect.top;
+    const [worldX, worldY] = screenToWorld(screenX, screenY);
+
+    if (isRGBCubeVisible() && isRGBCubePanning()) {
+      handleRGBCubePanMove(worldX, worldY);
+      return; 
+    }
+
+    const cubeRotating = isRGBCubeVisible() && handleRGBCubeMouseMove(worldX, worldY);
+    if (!cubeRotating) {
+      pan(event);
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('mouseup', (event) => {
+    handleRGBCubeMouseUp();
+    endPan(event);
+  });
+
+  canvas.addEventListener('mouseleave', (event) => {
+    handleRGBCubeMouseUp();
+    endPan(event);
+  });
 
   document.getElementById('saveButton')?.addEventListener('click', saveDrawing);
   document.getElementById('saveJPEGButton')?.addEventListener('click', saveAsJPEG);
@@ -163,6 +243,13 @@ function draw(){
   }
   if (previewCircle) {
     drawCircleMidpoint(previewCircle.centerX, previewCircle.centerY, previewCircle.radius, imageData.width, imageData.data, previewCircle.color);
+  }
+
+  if (isRGBCubeVisible()) {
+    const cubeImageData = renderRGBCube();
+    if (cubeImageData) {
+      drawRGBCubeToBuffer(cubeImageData, imageData.width, imageData.data);
+    }
   }
 
   if (offscreenCanvas.width !== imageData.width || offscreenCanvas.height !== imageData.height) {
@@ -211,6 +298,37 @@ function drawCircles(bufferWidth: number, bufferData: Uint8ClampedArray){
   const circles = getCircles();
   for (const circle of circles) {
     drawCircleMidpoint(circle.centerX, circle.centerY, circle.radius, bufferWidth, bufferData, circle.color);
+  }
+}
+
+function drawRGBCubeToBuffer(cubeImageData: ImageData, bufferWidth: number, bufferData: Uint8ClampedArray) {
+  const cubePos = getRGBCubeWorldPosition();
+  const cubeSize = getRGBCubeSize();
+  const halfSize = Math.floor(cubeSize / 2);
+
+  const startX = cubePos.x - halfSize;
+  const startY = cubePos.y - halfSize;
+
+  for (let y = 0; y < cubeSize; y++) {
+    for (let x = 0; x < cubeSize; x++) {
+      const worldX = startX + x;
+      const worldY = startY + y;
+
+      if (worldX < 0 || worldX >= bufferWidth || worldY < 0 || worldY >= Math.floor(bufferData.length / 4 / bufferWidth)) {
+        continue;
+      }
+
+      const cubeIdx = (y * cubeSize + x) * 4;
+      const bufferIdx = (worldY * bufferWidth + worldX) * 4;
+
+      const alpha = cubeImageData.data[cubeIdx + 3];
+      if (alpha > 10) {
+        bufferData[bufferIdx] = cubeImageData.data[cubeIdx];
+        bufferData[bufferIdx + 1] = cubeImageData.data[cubeIdx + 1];
+        bufferData[bufferIdx + 2] = cubeImageData.data[cubeIdx + 2];
+        bufferData[bufferIdx + 3] = 255;
+      }
+    }
   }
 }
 
