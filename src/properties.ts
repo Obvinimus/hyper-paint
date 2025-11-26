@@ -58,7 +58,6 @@ export function initPropertiesPanel() {
     updateButton.addEventListener('click', applyPropertyChanges);
     createButton.addEventListener('click', createShapeFromProperties);
 
-    // RGB Cube event listeners
     setupRGBCubeListeners();
 }
 

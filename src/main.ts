@@ -12,6 +12,27 @@ import type { PpmData } from './ppm.ts';
 import {mode} from './state.ts';
 import { setupColorPicker } from './colorpicker.ts';
 import {
+    addValue,
+    subtractValue,
+    multiplyValue,
+    divideValue,
+    changeBrightness,
+    toGrayscaleAverage,
+    toGrayscaleLuminance,
+    addValueR,
+    addValueG,
+    addValueB,
+    subtractValueR,
+    subtractValueG,
+    subtractValueB,
+    multiplyValueR,
+    multiplyValueG,
+    multiplyValueB,
+    divideValueR,
+    divideValueG,
+    divideValueB
+} from './point-transforms.ts';
+import {
     setupRGBCube,
     toggleRGBCube,
     isRGBCubeVisible,
@@ -96,6 +117,246 @@ document.getElementById('rgbCubeButton')?.addEventListener('click', () => {
   }
 });
 
+document.getElementById('pointTransformButton')?.addEventListener('click', () => {
+  const popup = document.getElementById('pointTransformPopup');
+  if (popup) {
+    if (popup.classList.contains('hidden')) {
+      if (!loadedPPMImage) {
+        alert('Najpierw wczytaj obraz (JPEG lub PPM)');
+        return;
+      }
+      popup.classList.remove('hidden');
+      const button = document.getElementById('pointTransformButton');
+      if (button) {
+        const rect = button.getBoundingClientRect();
+        popup.style.top = `${rect.bottom + 5}px`;
+        popup.style.left = `${rect.left}px`;
+      }
+    } else {
+      popup.classList.add('hidden');
+    }
+  }
+});
+
+function applyPointTransform(transformFn: (imageData: ImageData, ...args: any[]) => ImageData, ...args: any[]) {
+  if (!loadedPPMImage) {
+    alert('Najpierw wczytaj obraz');
+    return;
+  }
+
+  try {
+    loadedPPMImage = transformFn(loadedPPMImage, ...args);
+  } catch (error) {
+    alert(`Błąd: ${error instanceof Error ? error.message : 'Nieznany błąd'}`);
+  }
+}
+
+function setupPointTransforms() {
+  setupTabSwitching();
+
+  document.getElementById('addButton')?.addEventListener('click', () => {
+    const input = document.getElementById('addValue') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(addValue, value);
+  });
+
+  document.getElementById('subtractButton')?.addEventListener('click', () => {
+    const input = document.getElementById('subtractValue') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(subtractValue, value);
+  });
+
+  document.getElementById('multiplyButton')?.addEventListener('click', () => {
+    const input = document.getElementById('multiplyValue') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(multiplyValue, value);
+  });
+
+  document.getElementById('divideButton')?.addEventListener('click', () => {
+    const input = document.getElementById('divideValue') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(divideValue, value);
+  });
+
+  document.getElementById('brightnessButton')?.addEventListener('click', () => {
+    const input = document.getElementById('brightnessValue') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(changeBrightness, value);
+  });
+
+  document.getElementById('addButtonR')?.addEventListener('click', () => {
+    const input = document.getElementById('addValueR') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(addValueR, value);
+  });
+
+  document.getElementById('subtractButtonR')?.addEventListener('click', () => {
+    const input = document.getElementById('subtractValueR') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(subtractValueR, value);
+  });
+
+  document.getElementById('multiplyButtonR')?.addEventListener('click', () => {
+    const input = document.getElementById('multiplyValueR') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(multiplyValueR, value);
+  });
+
+  document.getElementById('divideButtonR')?.addEventListener('click', () => {
+    const input = document.getElementById('divideValueR') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(divideValueR, value);
+  });
+
+  document.getElementById('addButtonG')?.addEventListener('click', () => {
+    const input = document.getElementById('addValueG') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(addValueG, value);
+  });
+
+  document.getElementById('subtractButtonG')?.addEventListener('click', () => {
+    const input = document.getElementById('subtractValueG') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(subtractValueG, value);
+  });
+
+  document.getElementById('multiplyButtonG')?.addEventListener('click', () => {
+    const input = document.getElementById('multiplyValueG') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(multiplyValueG, value);
+  });
+
+  document.getElementById('divideButtonG')?.addEventListener('click', () => {
+    const input = document.getElementById('divideValueG') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(divideValueG, value);
+  });
+
+  document.getElementById('addButtonB')?.addEventListener('click', () => {
+    const input = document.getElementById('addValueB') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(addValueB, value);
+  });
+
+  document.getElementById('subtractButtonB')?.addEventListener('click', () => {
+    const input = document.getElementById('subtractValueB') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(subtractValueB, value);
+  });
+
+  document.getElementById('multiplyButtonB')?.addEventListener('click', () => {
+    const input = document.getElementById('multiplyValueB') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(multiplyValueB, value);
+  });
+
+  document.getElementById('divideButtonB')?.addEventListener('click', () => {
+    const input = document.getElementById('divideValueB') as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (isNaN(value)) {
+      alert('Podaj poprawną wartość');
+      return;
+    }
+    applyPointTransform(divideValueB, value);
+  });
+
+  document.getElementById('grayscaleAverageButton')?.addEventListener('click', () => {
+    applyPointTransform(toGrayscaleAverage);
+  });
+
+  document.getElementById('grayscaleLuminanceButton')?.addEventListener('click', () => {
+    applyPointTransform(toGrayscaleLuminance);
+  });
+}
+
+function setupTabSwitching() {
+  const tabs = ['RGB', 'R', 'G', 'B', 'Gray'];
+  const contents = ['contentRGB', 'contentR', 'contentG', 'contentB', 'contentGray'];
+
+  tabs.forEach((tab, index) => {
+    document.getElementById(`tab${tab}`)?.addEventListener('click', () => {
+      tabs.forEach((t, i) => {
+        const tabButton = document.getElementById(`tab${t}`);
+        const content = document.getElementById(contents[i]);
+
+        if (i === index) {
+          tabButton?.classList.add('border-blue-500', 'text-blue-400');
+          tabButton?.classList.remove('border-transparent', 'text-gray-400');
+          content?.classList.remove('hidden');
+        } else {
+          tabButton?.classList.remove('border-blue-500', 'text-blue-400');
+          tabButton?.classList.add('border-transparent', 'text-gray-400');
+          content?.classList.add('hidden');
+        }
+      });
+    });
+  });
+}
+
 function init() {
   canvas = document.getElementById('maincanvas') as HTMLCanvasElement;
   graphics = canvas.getContext('2d', { willReadFrequently: true });
@@ -122,6 +383,7 @@ function init() {
   initPropertiesPanel();
   setupColorPicker();
   setupRGBCube();
+  setupPointTransforms();
 
   window.addEventListener('keydown', (event) => {
     if (event.key === ' ' || event.code === 'Space') {

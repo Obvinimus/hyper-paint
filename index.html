@@ -36,6 +36,10 @@
             <span class="text-white font-bold text-xs">RGB</span>
         </button>
 
+        <button id="pointTransformButton" class="bg-gradient-to-br from-purple-500 via-indigo-500 to-blue-500 hover:scale-110 rounded-full transition-all duration-300 ease-linear cursor-pointer shadow-lg w-12 h-12 flex items-center justify-center p-0 border-2 border-white" title="Przekształcenia punktowe">
+            <span class="text-white font-bold text-xs">PT</span>
+        </button>
+
         <div id="colorPickerPopup" class="hidden fixed bg-slate-800 p-4 rounded-lg border border-gray-600 text-white text-xs shadow-2xl z-[60]">
             <div class="flex gap-3 items-start">
             
@@ -75,6 +79,172 @@
                 <input type="number" id="k-input" class="w-10 bg-gray-700 text-center rounded border border-gray-600 focus:border-blue-500 outline-none" min="0" max="100">
             </div>
         </div>
+        </div>
+
+        <div id="pointTransformPopup" class="hidden fixed bg-slate-800 p-4 rounded-lg border border-gray-600 text-white shadow-2xl z-[60] w-96 max-h-[80vh] overflow-y-auto">
+            <h3 class="text-lg font-bold mb-3 border-b border-gray-600 pb-2">Przekształcenia punktowe</h3>
+
+            <div class="flex gap-1 mb-3 border-b border-gray-600">
+                <button id="tabRGB" class="px-3 py-2 text-sm font-medium border-b-2 border-blue-500 text-blue-400">RGB</button>
+                <button id="tabR" class="px-3 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white">R</button>
+                <button id="tabG" class="px-3 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white">G</button>
+                <button id="tabB" class="px-3 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white">B</button>
+                <button id="tabGray" class="px-3 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white">Szarość</button>
+            </div>
+
+            <div id="contentRGB" class="space-y-3">
+                <div class="border border-gray-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1">Dodawanie (RGB)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="addValue" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Wartość" value="50">
+                        <button id="addButton" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+
+                <div class="border border-gray-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1">Odejmowanie (RGB)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="subtractValue" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Wartość" value="50">
+                        <button id="subtractButton" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+
+                <div class="border border-gray-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1">Mnożenie (RGB)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="multiplyValue" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Mnożnik" value="1.5" step="0.1">
+                        <button id="multiplyButton" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+
+                <div class="border border-gray-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1">Dzielenie (RGB)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="divideValue" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Dzielnik" value="2" step="0.1">
+                        <button id="divideButton" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+
+                <div class="border border-gray-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1">Jasność</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="brightnessValue" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Zmiana (-255 do 255)" value="30">
+                        <button id="brightnessButton" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="contentR" class="space-y-3 hidden">
+                <div class="border border-red-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1 text-red-400">Dodawanie (Kanał R)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="addValueR" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Wartość" value="50">
+                        <button id="addButtonR" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+
+                <div class="border border-red-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1 text-red-400">Odejmowanie (Kanał R)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="subtractValueR" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Wartość" value="50">
+                        <button id="subtractButtonR" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+
+                <div class="border border-red-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1 text-red-400">Mnożenie (Kanał R)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="multiplyValueR" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Mnożnik" value="1.5" step="0.1">
+                        <button id="multiplyButtonR" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+
+                <div class="border border-red-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1 text-red-400">Dzielenie (Kanał R)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="divideValueR" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Dzielnik" value="2" step="0.1">
+                        <button id="divideButtonR" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="contentG" class="space-y-3 hidden">
+                <div class="border border-green-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1 text-green-400">Dodawanie (Kanał G)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="addValueG" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Wartość" value="50">
+                        <button id="addButtonG" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+
+                <div class="border border-green-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1 text-green-400">Odejmowanie (Kanał G)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="subtractValueG" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Wartość" value="50">
+                        <button id="subtractButtonG" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+
+                <div class="border border-green-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1 text-green-400">Mnożenie (Kanał G)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="multiplyValueG" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Mnożnik" value="1.5" step="0.1">
+                        <button id="multiplyButtonG" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+
+                <div class="border border-green-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1 text-green-400">Dzielenie (Kanał G)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="divideValueG" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Dzielnik" value="2" step="0.1">
+                        <button id="divideButtonG" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="contentB" class="space-y-3 hidden">
+                <div class="border border-blue-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1 text-blue-400">Dodawanie (Kanał B)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="addValueB" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Wartość" value="50">
+                        <button id="addButtonB" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+
+                <div class="border border-blue-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1 text-blue-400">Odejmowanie (Kanał B)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="subtractValueB" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Wartość" value="50">
+                        <button id="subtractButtonB" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+
+                <div class="border border-blue-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1 text-blue-400">Mnożenie (Kanał B)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="multiplyValueB" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Mnożnik" value="1.5" step="0.1">
+                        <button id="multiplyButtonB" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+
+                <div class="border border-blue-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-1 text-blue-400">Dzielenie (Kanał B)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="divideValueB" class="flex-1 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600" placeholder="Dzielnik" value="2" step="0.1">
+                        <button id="divideButtonB" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm">Zastosuj</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="contentGray" class="space-y-3 hidden">
+                <div class="border border-gray-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-2">Metody konwersji do skali szarości</label>
+                    <div class="flex flex-col gap-2">
+                        <button id="grayscaleAverageButton" class="bg-gray-600 hover:bg-gray-700 px-3 py-2 rounded text-sm">Średnia arytmetyczna<br><span class="text-xs text-gray-400">(R+G+B)/3</span></button>
+                        <button id="grayscaleLuminanceButton" class="bg-gray-600 hover:bg-gray-700 px-3 py-2 rounded text-sm">Luminancja (ważona)<br><span class="text-xs text-gray-400">0.299R + 0.587G + 0.114B</span></button>
+                    </div>
+                </div>
+            </div>
         </div>
       </div>
       <canvas id="maincanvas" width="1280" height="860" class="mt-30"></canvas>
