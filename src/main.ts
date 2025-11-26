@@ -33,6 +33,13 @@ import {
     divideValueB
 } from './point-transforms.ts';
 import {
+    filtrWygladzajacy,
+    filtrMedianowy,
+    filtrWykrywaniaKrawedzi,
+    filtrGornoprzepustowyWyostrzajacy,
+    filtrRozmycieGaussowskie
+} from './filters.ts';
+import {
     setupRGBCube,
     toggleRGBCube,
     isRGBCubeVisible,
@@ -331,11 +338,31 @@ function setupPointTransforms() {
   document.getElementById('grayscaleLuminanceButton')?.addEventListener('click', () => {
     applyPointTransform(toGrayscaleLuminance);
   });
+
+  document.getElementById('filtrWygladzajacyButton')?.addEventListener('click', () => {
+    applyPointTransform(filtrWygladzajacy);
+  });
+
+  document.getElementById('filtrMedianowyButton')?.addEventListener('click', () => {
+    applyPointTransform(filtrMedianowy);
+  });
+
+  document.getElementById('filtrWykrywaniaKrawedziButton')?.addEventListener('click', () => {
+    applyPointTransform(filtrWykrywaniaKrawedzi);
+  });
+
+  document.getElementById('filtrGornoprzepustowyWyostrzajacyButton')?.addEventListener('click', () => {
+    applyPointTransform(filtrGornoprzepustowyWyostrzajacy);
+  });
+
+  document.getElementById('filtrRozmycieGaussowskieButton')?.addEventListener('click', () => {
+    applyPointTransform(filtrRozmycieGaussowskie);
+  });
 }
 
 function setupTabSwitching() {
-  const tabs = ['RGB', 'R', 'G', 'B', 'Gray'];
-  const contents = ['contentRGB', 'contentR', 'contentG', 'contentB', 'contentGray'];
+  const tabs = ['RGB', 'R', 'G', 'B', 'Gray', 'Filters'];
+  const contents = ['contentRGB', 'contentR', 'contentG', 'contentB', 'contentGray', 'contentFilters'];
 
   tabs.forEach((tab, index) => {
     document.getElementById(`tab${tab}`)?.addEventListener('click', () => {
