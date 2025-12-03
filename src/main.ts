@@ -40,6 +40,19 @@ import {
     filtrRozmycieGaussowskie
 } from './filters.ts';
 import {
+    calculateHistogram,
+    histogramStretch,
+    histogramEqualize,
+    drawHistogram,
+    type Histogram
+} from './histogram.ts';
+import {
+    binarizeManual,
+    binarizePercentBlack,
+    binarizeMeanIterative,
+    getThresholdValue
+} from './binarization.ts';
+import {
     setupRGBCube,
     toggleRGBCube,
     isRGBCubeVisible,
@@ -71,6 +84,9 @@ let isSpacebarPressed = false;
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 50;
 const GRID_ZOOM_THRESHOLD = 15;
+
+let currentHistogram: Histogram | null = null;
+let currentHistogramChannel: 'r' | 'g' | 'b' | 'gray' = 'gray';
 
 
 
@@ -134,6 +150,56 @@ document.getElementById('pointTransformButton')?.addEventListener('click', () =>
       }
       popup.classList.remove('hidden');
       const button = document.getElementById('pointTransformButton');
+      if (button) {
+        const rect = button.getBoundingClientRect();
+        popup.style.top = `${rect.bottom + 5}px`;
+        popup.style.left = `${rect.left}px`;
+      }
+    } else {
+      popup.classList.add('hidden');
+    }
+  }
+});
+
+document.getElementById('histogramButton')?.addEventListener('click', () => {
+  const popup = document.getElementById('histogramPopup');
+  if (popup) {
+    if (popup.classList.contains('hidden')) {
+      if (!loadedPPMImage) {
+        alert('Najpierw wczytaj obraz (JPEG lub PPM)');
+        return;
+      }
+
+      currentHistogram = calculateHistogram(loadedPPMImage);
+      updateHistogramDisplay();
+
+      popup.classList.remove('hidden');
+      const button = document.getElementById('histogramButton');
+      if (button) {
+        const rect = button.getBoundingClientRect();
+        popup.style.top = `${rect.bottom + 5}px`;
+        popup.style.left = `${rect.left}px`;
+      }
+    } else {
+      popup.classList.add('hidden');
+    }
+  }
+});
+
+document.getElementById('binarizationButton')?.addEventListener('click', () => {
+  const popup = document.getElementById('binarizationPopup');
+  if (popup) {
+    if (popup.classList.contains('hidden')) {
+      if (!loadedPPMImage) {
+        alert('Najpierw wczytaj obraz (JPEG lub PPM)');
+        return;
+      }
+
+      currentHistogram = calculateHistogram(loadedPPMImage);
+      updateBinarizationHistogram();
+
+      popup.classList.remove('hidden');
+      const button = document.getElementById('binarizationButton');
       if (button) {
         const rect = button.getBoundingClientRect();
         popup.style.top = `${rect.bottom + 5}px`;
@@ -384,6 +450,134 @@ function setupTabSwitching() {
   });
 }
 
+function updateHistogramDisplay() {
+  const histogramCanvas = document.getElementById('histogramCanvas') as HTMLCanvasElement;
+  if (!histogramCanvas || !currentHistogram) return;
+
+  drawHistogram(histogramCanvas, currentHistogram, currentHistogramChannel);
+}
+
+function setupHistogram() {
+  const histogramCanvas = document.getElementById('histogramCanvas') as HTMLCanvasElement;
+  const binarizationHistogramCanvas = document.getElementById('binarizationHistogramCanvas') as HTMLCanvasElement;
+
+  const histTabs = ['Gray', 'R', 'G', 'B'];
+  const histChannels: ('gray' | 'r' | 'g' | 'b')[] = ['gray', 'r', 'g', 'b'];
+
+  histTabs.forEach((tab, index) => {
+    document.getElementById(`histTab${tab}`)?.addEventListener('click', () => {
+      currentHistogramChannel = histChannels[index];
+
+      histTabs.forEach((t, i) => {
+        const tabButton = document.getElementById(`histTab${t}`);
+        if (i === index) {
+          tabButton?.classList.add('border-blue-500', 'text-blue-400');
+          tabButton?.classList.remove('border-transparent', 'text-gray-400');
+        } else {
+          tabButton?.classList.remove('border-blue-500', 'text-blue-400');
+          tabButton?.classList.add('border-transparent', 'text-gray-400');
+        }
+      });
+
+      updateHistogramDisplay();
+    });
+  });
+
+  document.getElementById('histogramStretchButton')?.addEventListener('click', () => {
+    if (!loadedPPMImage) {
+      alert('Najpierw wczytaj obraz');
+      return;
+    }
+
+    const beforeHistogram = calculateHistogram(loadedPPMImage);
+    loadedPPMImage = histogramStretch(loadedPPMImage);
+    currentHistogram = calculateHistogram(loadedPPMImage);
+    updateHistogramDisplay();
+
+    console.log('Histogram został rozciągnięty. Sprawdź obraz - kontrast powinien być zwiększony.');
+  });
+
+  document.getElementById('histogramEqualizeButton')?.addEventListener('click', () => {
+    if (!loadedPPMImage) {
+      alert('Najpierw wczytaj obraz');
+      return;
+    }
+
+    loadedPPMImage = histogramEqualize(loadedPPMImage);
+    currentHistogram = calculateHistogram(loadedPPMImage);
+    updateHistogramDisplay();
+
+    console.log('Histogram został wyrównany. Rozkład jasności powinien być bardziej równomierny.');
+  });
+}
+
+function updateBinarizationHistogram() {
+  const binarizationHistogramCanvas = document.getElementById('binarizationHistogramCanvas') as HTMLCanvasElement;
+  if (!binarizationHistogramCanvas || !currentHistogram) return;
+
+  drawHistogram(binarizationHistogramCanvas, currentHistogram, 'gray');
+}
+
+function setupBinarization() {
+  const manualThresholdSlider = document.getElementById('manualThresholdSlider') as HTMLInputElement;
+  const manualThresholdInput = document.getElementById('manualThresholdInput') as HTMLInputElement;
+  const percentBlackInput = document.getElementById('percentBlackInput') as HTMLInputElement;
+
+  manualThresholdSlider?.addEventListener('input', () => {
+    manualThresholdInput.value = manualThresholdSlider.value;
+  });
+
+  manualThresholdInput?.addEventListener('input', () => {
+    manualThresholdSlider.value = manualThresholdInput.value;
+  });
+
+  document.getElementById('binarizeManualButton')?.addEventListener('click', () => {
+    if (!loadedPPMImage) {
+      alert('Najpierw wczytaj obraz');
+      return;
+    }
+
+    const threshold = parseInt(manualThresholdInput.value);
+    loadedPPMImage = binarizeManual(loadedPPMImage, threshold);
+    currentHistogram = calculateHistogram(loadedPPMImage);
+    updateBinarizationHistogram();
+  });
+
+  document.getElementById('binarizePercentBlackButton')?.addEventListener('click', () => {
+    if (!loadedPPMImage) {
+      alert('Najpierw wczytaj obraz');
+      return;
+    }
+
+    const percent = parseFloat(percentBlackInput.value);
+    if (isNaN(percent) || percent < 0 || percent > 100) {
+      alert('Podaj poprawną wartość procentu (0-100)');
+      return;
+    }
+
+    const calculatedThreshold = getThresholdValue(loadedPPMImage, 'percentBlack', percent);
+    console.log(`Obliczony próg dla ${percent}% czarnych pikseli: ${calculatedThreshold}`);
+
+    loadedPPMImage = binarizePercentBlack(loadedPPMImage, percent);
+    currentHistogram = calculateHistogram(loadedPPMImage);
+    updateBinarizationHistogram();
+  });
+
+  document.getElementById('binarizeMeanIterativeButton')?.addEventListener('click', () => {
+    if (!loadedPPMImage) {
+      alert('Najpierw wczytaj obraz');
+      return;
+    }
+
+    const calculatedThreshold = getThresholdValue(loadedPPMImage, 'meanIterative');
+    console.log(`Obliczony próg metodą iteratywną: ${calculatedThreshold}`);
+
+    loadedPPMImage = binarizeMeanIterative(loadedPPMImage);
+    currentHistogram = calculateHistogram(loadedPPMImage);
+    updateBinarizationHistogram();
+  });
+}
+
 function init() {
   canvas = document.getElementById('maincanvas') as HTMLCanvasElement;
   graphics = canvas.getContext('2d', { willReadFrequently: true });
@@ -411,6 +605,8 @@ function init() {
   setupColorPicker();
   setupRGBCube();
   setupPointTransforms();
+  setupHistogram();
+  setupBinarization();
 
   window.addEventListener('keydown', (event) => {
     if (event.key === ' ' || event.code === 'Space') {

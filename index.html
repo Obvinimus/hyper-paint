@@ -40,6 +40,14 @@
             <span class="text-white font-bold text-xs">PT</span>
         </button>
 
+        <button id="histogramButton" class="bg-gradient-to-br from-orange-500 via-yellow-500 to-red-500 hover:scale-110 rounded-full transition-all duration-300 ease-linear cursor-pointer shadow-lg w-12 h-12 flex items-center justify-center p-0 border-2 border-white" title="Histogram">
+            <span class="text-white font-bold text-xs">H</span>
+        </button>
+
+        <button id="binarizationButton" class="bg-gradient-to-br from-gray-500 via-gray-600 to-gray-700 hover:scale-110 rounded-full transition-all duration-300 ease-linear cursor-pointer shadow-lg w-12 h-12 flex items-center justify-center p-0 border-2 border-white" title="Binaryzacja">
+            <span class="text-white font-bold text-xs">BIN</span>
+        </button>
+
         <div id="colorPickerPopup" class="hidden fixed bg-slate-800 p-4 rounded-lg border border-gray-600 text-white text-xs shadow-2xl z-[60]">
             <div class="flex gap-3 items-start">
             
@@ -265,6 +273,84 @@
                         </button>
                         <button id="filtrRozmycieGaussowskieButton" class="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-sm text-left">
                             Filtr rozmycie gaussowskie<br><span class="text-xs text-gray-400">Kernel 5x5</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="histogramPopup" class="hidden fixed bg-slate-800 p-4 rounded-lg border border-gray-600 text-white shadow-2xl z-[60] w-[500px] max-h-[80vh] overflow-y-auto">
+            <h3 class="text-lg font-bold mb-3 border-b border-gray-600 pb-2">Histogram</h3>
+
+            <div class="mb-3">
+                <canvas id="histogramCanvas" width="456" height="200" class="border border-gray-600 rounded bg-gray-900"></canvas>
+            </div>
+
+            <div class="flex gap-1 mb-3 border-b border-gray-600 pb-2">
+                <button id="histTabGray" class="px-3 py-2 text-sm font-medium border-b-2 border-blue-500 text-blue-400">Szarość</button>
+                <button id="histTabR" class="px-3 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white">R</button>
+                <button id="histTabG" class="px-3 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white">G</button>
+                <button id="histTabB" class="px-3 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white">B</button>
+            </div>
+
+            <div class="space-y-3">
+                <div class="border border-orange-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-2 text-orange-400">Normalizacja histogramu</label>
+                    <button id="histogramStretchButton" class="w-full bg-orange-600 hover:bg-orange-700 px-3 py-2 rounded text-sm">
+                        Rozciągnij histogram<br><span class="text-xs text-gray-300">Histogram stretching</span>
+                    </button>
+                </div>
+
+                <div class="border border-yellow-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-2 text-yellow-400">Wyrównanie histogramu</label>
+                    <button id="histogramEqualizeButton" class="w-full bg-yellow-600 hover:bg-yellow-700 px-3 py-2 rounded text-sm">
+                        Wyrównaj histogram<br><span class="text-xs text-gray-300">Histogram equalization</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="binarizationPopup" class="hidden fixed bg-slate-800 p-4 rounded-lg border border-gray-600 text-white shadow-2xl z-[60] w-[500px] max-h-[80vh] overflow-y-auto">
+            <h3 class="text-lg font-bold mb-3 border-b border-gray-600 pb-2">Binaryzacja</h3>
+
+            <div class="mb-3">
+                <canvas id="binarizationHistogramCanvas" width="456" height="150" class="border border-gray-600 rounded bg-gray-900"></canvas>
+            </div>
+
+            <div class="space-y-3">
+                <div class="border border-gray-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-2">Próg ręczny</label>
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center gap-2">
+                            <input type="range" id="manualThresholdSlider" min="0" max="255" value="127" class="flex-1">
+                            <input type="number" id="manualThresholdInput" min="0" max="255" value="127" class="w-16 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600 text-center">
+                        </div>
+                        <button id="binarizeManualButton" class="bg-gray-600 hover:bg-gray-700 px-3 py-2 rounded text-sm">
+                            Zastosuj próg ręczny
+                        </button>
+                    </div>
+                </div>
+
+                <div class="border border-gray-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-2">Procentowa selekcja czarnego</label>
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs">Procent czarnych pikseli:</label>
+                            <input type="number" id="percentBlackInput" min="0" max="100" value="50" class="w-16 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600 text-center">
+                            <span class="text-xs">%</span>
+                        </div>
+                        <button id="binarizePercentBlackButton" class="bg-gray-600 hover:bg-gray-700 px-3 py-2 rounded text-sm">
+                            Zastosuj procentową selekcję
+                        </button>
+                    </div>
+                </div>
+
+                <div class="border border-gray-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-2">Selekcja iteratywna średniej</label>
+                    <div class="flex flex-col gap-2">
+                        <p class="text-xs text-gray-400">Automatyczne wyznaczenie progu metodą iteracyjną</p>
+                        <button id="binarizeMeanIterativeButton" class="bg-gray-600 hover:bg-gray-700 px-3 py-2 rounded text-sm">
+                            Zastosuj selekcję iteratywną
                         </button>
                     </div>
                 </div>
