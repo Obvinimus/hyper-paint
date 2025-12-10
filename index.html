@@ -28,6 +28,14 @@
             <button id="grabTool" class="bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 text-indigo-700 hover:text-white rounded-full transition-all duration-300 ease-linear cursor-pointer shadow-lg w-12 h-12 flex items-center justify-center p-0" title="Chwytak">
                 <img src="src/assests/grab-tool-icon.svg" alt="Chwytak" class="w-10 h-10"/>
             </button>
+            <button id="bezierTool" class="bg-slate-200 hover:bg-indigo-600 dark:bg-slate-800 text-indigo-700 hover:text-white rounded-full transition-all duration-300 ease-linear cursor-pointer shadow-lg w-12 h-12 flex items-center justify-center p-0" title="Krzywa Beziera">
+                <span class="text-lg font-bold">B</span>
+            </button>
+        </div>
+
+        <div class="flex items-center gap-2 bg-slate-700 px-3 py-1 rounded-lg" id="bezierDegreeContainer">
+            <label for="bezierDegree" class="text-white text-sm">Stopien:</label>
+            <input type="number" id="bezierDegree" min="1" max="20" value="3" class="w-14 bg-gray-600 text-white text-center rounded border border-gray-500 px-1 py-0.5 text-sm" title="Stopien krzywej Beziera">
         </div>
 
         <button id="colorPickerButton" class="w-12 h-12 rounded-full border-2 border-white shadow-lg cursor-pointer hover:scale-110 transition-transform" style="background-color: #000000;" title="Wybierz kolor"></button>
@@ -416,16 +424,30 @@
 
     <div id="circle-props" class="hidden space-y-2">
         <div>
-            <label class="block text-sm font-medium">Środek (X, Y)</label>
+            <label class="block text-sm font-medium">Srodek (X, Y)</label>
             <div class="flex space-x-2">
                 <input type="number" id="circle-cx" class="w-full p-1 border rounded">
                 <input type="number" id="circle-cy" class="w-full p-1 border rounded">
             </div>
         </div>
         <div>
-            <label class="block text-sm font-medium">Promień</label>
+            <label class="block text-sm font-medium">Promien</label>
             <input type="number" id="circle-radius" class="w-full p-1 border rounded" min="0">
         </div>
+    </div>
+
+    <div id="bezier-props" class="hidden space-y-2">
+        <div>
+            <label class="block text-sm font-medium mb-2">Punkty kontrolne</label>
+            <div id="bezier-points-container" class="space-y-2 max-h-64 overflow-y-auto">
+            </div>
+        </div>
+        <button id="addBezierPointBtn" class="w-full bg-green-500 text-white p-1 rounded hover:bg-green-600 text-sm">
+            + Dodaj punkt
+        </button>
+        <button id="removeBezierPointBtn" class="w-full bg-red-500 text-white p-1 rounded hover:bg-red-600 text-sm">
+            - Usun ostatni punkt
+        </button>
     </div>
 
     <div id="rgb-cube-props" class="hidden space-y-3">

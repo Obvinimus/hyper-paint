@@ -3,6 +3,7 @@ import { mode, currentColor } from "./state";
 import { Line, getLines } from "./line";
 import { Rectangle, getRectangles } from "./rectangle";
 import { Circle, getCircles } from "./circle";
+import { BezierCurve, getBezierCurves, getBezierDegree, type Point } from "./bezier";
 import {
     setSliceEnabled,
     setSliceAxis,
@@ -14,6 +15,7 @@ import {
 let panel: HTMLElement;
 let noSelection: HTMLElement;
 let lineProps: HTMLElement, rectProps: HTMLElement, circleProps: HTMLElement, commonProps: HTMLElement;
+let bezierProps: HTMLElement;
 let rgbCubeProps: HTMLElement;
 
 let lineX1: HTMLInputElement, lineY1: HTMLInputElement, lineX2: HTMLInputElement, lineY2: HTMLInputElement;
@@ -21,6 +23,10 @@ let lineX1: HTMLInputElement, lineY1: HTMLInputElement, lineX2: HTMLInputElement
 let rectX1: HTMLInputElement, rectY1: HTMLInputElement, rectWidth: HTMLInputElement, rectHeight: HTMLInputElement;
 
 let circleCX: HTMLInputElement, circleCY: HTMLInputElement, circleRadius: HTMLInputElement;
+
+let bezierPointsContainer: HTMLElement;
+let addBezierPointBtn: HTMLButtonElement;
+let removeBezierPointBtn: HTMLButtonElement;
 
 let shapeColor: HTMLInputElement;
 let updateButton: HTMLButtonElement;
@@ -34,6 +40,7 @@ export function initPropertiesPanel() {
     lineProps = document.getElementById('line-props') as HTMLElement;
     rectProps = document.getElementById('rect-props') as HTMLElement;
     circleProps = document.getElementById('circle-props') as HTMLElement;
+    bezierProps = document.getElementById('bezier-props') as HTMLElement;
     commonProps = document.getElementById('common-props') as HTMLElement;
     rgbCubeProps = document.getElementById('rgb-cube-props') as HTMLElement;
 
@@ -51,6 +58,10 @@ export function initPropertiesPanel() {
     circleCY = document.getElementById('circle-cy') as HTMLInputElement;
     circleRadius = document.getElementById('circle-radius') as HTMLInputElement;
 
+    bezierPointsContainer = document.getElementById('bezier-points-container') as HTMLElement;
+    addBezierPointBtn = document.getElementById('addBezierPointBtn') as HTMLButtonElement;
+    removeBezierPointBtn = document.getElementById('removeBezierPointBtn') as HTMLButtonElement;
+
     shapeColor = document.getElementById('shape-color') as HTMLInputElement;
     updateButton = document.getElementById('updateButton') as HTMLButtonElement;
     createButton = document.getElementById('createButton') as HTMLButtonElement;
@@ -59,6 +70,7 @@ export function initPropertiesPanel() {
     createButton.addEventListener('click', createShapeFromProperties);
 
     setupRGBCubeListeners();
+    setupBezierListeners();
 }
 
 function setupRGBCubeListeners() {
@@ -98,16 +110,126 @@ function setupRGBCubeListeners() {
     });
 }
 
+function setupBezierListeners() {
+    addBezierPointBtn?.addEventListener('click', () => {
+        if (!selectedShape || selectedShape.type !== 'bezier') return;
+
+        const bezier = selectedShape as BezierCurve;
+        bezier.controlPoints.push({ x: 0, y: 0 });
+        renderBezierPointsUI(bezier.controlPoints);
+    });
+
+    removeBezierPointBtn?.addEventListener('click', () => {
+        if (!selectedShape || selectedShape.type !== 'bezier') return;
+
+        const bezier = selectedShape as BezierCurve;
+        if (bezier.controlPoints.length > 2) {
+            bezier.controlPoints.pop();
+            renderBezierPointsUI(bezier.controlPoints);
+        }
+    });
+}
+
+function renderBezierPointsUI(points: Point[]) {
+    if (!bezierPointsContainer) return;
+
+    bezierPointsContainer.innerHTML = '';
+
+    points.forEach((point, index) => {
+        const pointDiv = document.createElement('div');
+        pointDiv.className = 'flex items-center gap-1 text-sm';
+
+        pointDiv.innerHTML = `
+            <span class="w-8 font-medium">P${index}:</span>
+            <input type="number" class="bezier-point-x w-16 p-1 border rounded text-sm" data-index="${index}" value="${Math.round(point.x)}">
+            <input type="number" class="bezier-point-y w-16 p-1 border rounded text-sm" data-index="${index}" value="${Math.round(point.y)}">
+        `;
+
+        bezierPointsContainer.appendChild(pointDiv);
+    });
+
+    // Add event listeners for the inputs
+    bezierPointsContainer.querySelectorAll('.bezier-point-x, .bezier-point-y').forEach(input => {
+        input.addEventListener('change', (e) => {
+            if (!selectedShape || selectedShape.type !== 'bezier') return;
+
+            const bezier = selectedShape as BezierCurve;
+            const target = e.target as HTMLInputElement;
+            const index = parseInt(target.dataset.index || '0');
+            const value = parseFloat(target.value);
+
+            if (!isNaN(value) && index < bezier.controlPoints.length) {
+                if (target.classList.contains('bezier-point-x')) {
+                    bezier.controlPoints[index].x = value;
+                } else {
+                    bezier.controlPoints[index].y = value;
+                }
+            }
+        });
+    });
+}
+
+let createBezierPoints: Point[] = [];
+
+function renderCreateBezierPointsUI() {
+    if (!bezierPointsContainer) return;
+
+    bezierPointsContainer.innerHTML = '';
+
+    const degree = getBezierDegree();
+    const numPoints = degree + 1;
+
+    // Initialize points if needed
+    while (createBezierPoints.length < numPoints) {
+        createBezierPoints.push({ x: 100 + createBezierPoints.length * 50, y: 100 });
+    }
+    while (createBezierPoints.length > numPoints) {
+        createBezierPoints.pop();
+    }
+
+    createBezierPoints.forEach((point, index) => {
+        const pointDiv = document.createElement('div');
+        pointDiv.className = 'flex items-center gap-1 text-sm';
+
+        pointDiv.innerHTML = `
+            <span class="w-8 font-medium">P${index}:</span>
+            <input type="number" class="create-bezier-point-x w-16 p-1 border rounded text-sm" data-index="${index}" value="${Math.round(point.x)}">
+            <input type="number" class="create-bezier-point-y w-16 p-1 border rounded text-sm" data-index="${index}" value="${Math.round(point.y)}">
+        `;
+
+        bezierPointsContainer.appendChild(pointDiv);
+    });
+
+    // Add event listeners for the inputs
+    bezierPointsContainer.querySelectorAll('.create-bezier-point-x, .create-bezier-point-y').forEach(input => {
+        input.addEventListener('change', (e) => {
+            const target = e.target as HTMLInputElement;
+            const index = parseInt(target.dataset.index || '0');
+            const value = parseFloat(target.value);
+
+            if (!isNaN(value) && index < createBezierPoints.length) {
+                if (target.classList.contains('create-bezier-point-x')) {
+                    createBezierPoints[index].x = value;
+                } else {
+                    createBezierPoints[index].y = value;
+                }
+            }
+        });
+    });
+}
+
 function clearInputFields() {
     lineX1.value = ''; lineY1.value = ''; lineX2.value = ''; lineY2.value = '';
     rectX1.value = ''; rectY1.value = ''; rectWidth.value = ''; rectHeight.value = '';
     circleCX.value = ''; circleCY.value = ''; circleRadius.value = '';
+    createBezierPoints = [];
 }
 
 export function showRGBCubeProperties() {
     lineProps.classList.add('hidden');
     rectProps.classList.add('hidden');
     circleProps.classList.add('hidden');
+    bezierProps.classList.add('hidden');
     commonProps.classList.add('hidden');
     noSelection.classList.add('hidden');
     updateButton.classList.add('hidden');
@@ -125,6 +247,7 @@ export function updatePropertiesPanel(shape: any) {
     lineProps.classList.add('hidden');
     rectProps.classList.add('hidden');
     circleProps.classList.add('hidden');
+    bezierProps.classList.add('hidden');
     commonProps.classList.add('hidden');
     noSelection.classList.add('hidden');
     updateButton.classList.add('hidden');
@@ -134,8 +257,8 @@ export function updatePropertiesPanel(shape: any) {
     if (shape) {
         panel.classList.remove('translate-x-full');
         commonProps.classList.remove('hidden');
-        updateButton.classList.remove('hidden'); 
-        
+        updateButton.classList.remove('hidden');
+
         if (shape.type === 'line') {
             lineProps.classList.remove('hidden');
             lineX1.value = shape.x1.toString();
@@ -153,23 +276,29 @@ export function updatePropertiesPanel(shape: any) {
             circleCX.value = shape.centerX.toString();
             circleCY.value = shape.centerY.toString();
             circleRadius.value = shape.radius.toString();
+        } else if (shape.type === 'bezier') {
+            bezierProps.classList.remove('hidden');
+            renderBezierPointsUI(shape.controlPoints);
         }
         shapeColor.value = shape.color;
 
-    } else if (mode < 3) {
+    } else if (mode < 3 || mode === 5) {
         panel.classList.remove('translate-x-full');
         commonProps.classList.remove('hidden');
-        createButton.classList.remove('hidden'); 
-        
-        clearInputFields(); 
-        shapeColor.value = currentColor; 
+        createButton.classList.remove('hidden');
 
-        if (mode === 0) { 
+        clearInputFields();
+        shapeColor.value = currentColor;
+
+        if (mode === 0) {
             lineProps.classList.remove('hidden');
-        } else if (mode === 1) { 
+        } else if (mode === 1) {
             rectProps.classList.remove('hidden');
-        } else if (mode === 2) { 
+        } else if (mode === 2) {
             circleProps.classList.remove('hidden');
+        } else if (mode === 5) {
+            bezierProps.classList.remove('hidden');
+            renderCreateBezierPointsUI();
         }
     } else {
         panel.classList.add('translate-x-full');
@@ -180,16 +309,16 @@ function createShapeFromProperties() {
     try {
         const color = shapeColor.value;
 
-        if (mode === 0) { 
+        if (mode === 0) {
             const x1 = parseFloat(lineX1.value);
             const y1 = parseFloat(lineY1.value);
             const x2 = parseFloat(lineX2.value);
             const y2 = parseFloat(lineY2.value);
             if (isNaN(x1) || isNaN(y1) || isNaN(x2) || isNaN(y2)) throw new Error("Error invalid line properties.");
-            
+
             getLines().push(new Line(x1, y1, x2, y2, color));
 
-        } else if (mode === 1) { 
+        } else if (mode === 1) {
             const x1 = parseFloat(rectX1.value);
             const y1 = parseFloat(rectY1.value);
             const width = parseFloat(rectWidth.value);
@@ -200,15 +329,37 @@ function createShapeFromProperties() {
             const y2 = y1 + height;
             getRectangles().push(new Rectangle(x1, y1, x2, y2, color));
 
-        } else if (mode === 2) { 
+        } else if (mode === 2) {
             const cx = parseFloat(circleCX.value);
             const cy = parseFloat(circleCY.value);
             const r = parseFloat(circleRadius.value);
             if (isNaN(cx) || isNaN(cy) || isNaN(r)) throw new Error("Error invalid circle properties.");
 
             getCircles().push(new Circle(cx, cy, r, color));
+
+        } else if (mode === 5) {
+            if (createBezierPoints.length < 2) throw new Error("Error: Bezier curve needs at least 2 points.");
+
+            // Read values from inputs
+            const points: Point[] = [];
+
+            for (let i = 0; i < createBezierPoints.length; i++) {
+                const xInput = bezierPointsContainer.querySelector(`.create-bezier-point-x[data-index="${i}"]`) as HTMLInputElement;
+                const yInput = bezierPointsContainer.querySelector(`.create-bezier-point-y[data-index="${i}"]`) as HTMLInputElement;
+
+                if (xInput && yInput) {
+                    const x = parseFloat(xInput.value);
+                    const y = parseFloat(yInput.value);
+                    if (isNaN(x) || isNaN(y)) throw new Error("Error invalid Bezier point.");
+                    points.push({ x, y });
+                }
+            }
+
+            if (points.length >= 2) {
+                getBezierCurves().push(new BezierCurve(points, color));
+                createBezierPoints = [];
+            }
         }
-        
 
     } catch (e) {
         alert("Error invalid input values.");
@@ -232,16 +383,19 @@ function applyPropertyChanges() {
             const y1 = parseFloat(rectY1.value);
             const width = parseFloat(rectWidth.value);
             const height = parseFloat(rectHeight.value);
-            
+
             selectedShape.x1 = x1;
             selectedShape.y1 = y1;
             selectedShape.x2 = x1 + width;
             selectedShape.y2 = y1 + height;
-            selectedShape.normalize(); 
+            selectedShape.normalize();
         } else if (selectedShape.type === 'circle') {
             selectedShape.centerX = parseFloat(circleCX.value);
             selectedShape.centerY = parseFloat(circleCY.value);
             selectedShape.radius = parseFloat(circleRadius.value);
+        } else if (selectedShape.type === 'bezier') {
+            // Bezier points are already updated in real-time through the input listeners
+            // Just update the color here
         }
     } catch (e) {
         alert("Invalid input values. Please check and try again.");

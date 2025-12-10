@@ -5,6 +5,19 @@ import { setupSelection, selectedShape, drawHandle } from './grabtool.ts';
 import { getLines, setupLineDrawing, drawLineBresenham, previewLine, setLines, Line } from './line.ts';
 import { setupRectangleDrawing, getRectangles, previewRect, setRectangles, Rectangle } from './rectangle.ts';
 import { setupCircleDrawing, getCircles, drawCircleMidpoint, previewCircle, setCircles, Circle } from './circle.ts';
+import {
+    setupBezierDrawing,
+    getBezierCurves,
+    setBezierCurves,
+    previewBezier,
+    bezierControlPoints,
+    drawBezierCurve,
+    drawControlPolygon,
+    drawControlPointMarkers,
+    BezierCurve,
+    setBezierDegree,
+    resetBezierDrawing
+} from './bezier.ts';
 import { initPropertiesPanel, updatePropertiesPanel, showRGBCubeProperties, hideRGBCubeProperties } from './properties.ts';
 import { parsePPMP3, parsePPMP6 } from './ppm.ts';
 import { screenToWorld, worldToScreen } from './coords.ts';
@@ -122,7 +135,22 @@ document.getElementById('pencilTool')?.addEventListener('click', () => {
 
 document.getElementById('grabTool')?.addEventListener('click', () => {
   setMode(4);
-  updatePropertiesPanel(null); 
+  updatePropertiesPanel(null);
+});
+
+document.getElementById('bezierTool')?.addEventListener('click', () => {
+  setMode(5);
+  resetBezierDrawing();
+  updatePropertiesPanel(null);
+});
+
+document.getElementById('bezierDegree')?.addEventListener('change', (event) => {
+  const input = event.target as HTMLInputElement;
+  const degree = parseInt(input.value);
+  if (!isNaN(degree) && degree >= 1) {
+    setBezierDegree(degree);
+    resetBezierDrawing();
+  }
 });
 
 document.getElementById('rgbCubeButton')?.addEventListener('click', () => {
@@ -597,9 +625,10 @@ function init() {
   if (!graphics || !canvas || !imageData) return; 
 
   setupPixelDrawing(canvas, graphics, imageData);
-  setupLineDrawing(canvas); 
+  setupLineDrawing(canvas);
   setupRectangleDrawing(canvas);
   setupCircleDrawing(canvas);
+  setupBezierDrawing(canvas);
   setupSelection(canvas);
   initPropertiesPanel();
   setupColorPicker();
@@ -707,7 +736,8 @@ function draw(){
 
   drawLines(imageData.width, imageData.data);
   drawRectangles(imageData.width, imageData.data);
-  drawCircles(imageData.width, imageData.data); 
+  drawCircles(imageData.width, imageData.data);
+  drawBezierCurves(imageData.width, imageData.data); 
 
   if (selectedShape && typeof selectedShape.getHandles === 'function') {
       const handles = selectedShape.getHandles();
@@ -728,6 +758,27 @@ function draw(){
   }
   if (previewCircle) {
     drawCircleMidpoint(previewCircle.centerX, previewCircle.centerY, previewCircle.radius, imageData.width, imageData.data, previewCircle.color);
+  }
+
+  // Draw Bezier preview and control points during drawing
+  if (bezierControlPoints.length > 0) {
+    // Draw control polygon for points already placed
+    if (bezierControlPoints.length > 1) {
+      drawControlPolygon(bezierControlPoints, imageData.width, imageData.data, '#aaaaaa');
+    }
+    // Draw control point markers
+    drawControlPointMarkers(bezierControlPoints, imageData.width, imageData.data);
+  }
+
+  if (previewBezier) {
+    // Draw control polygon including preview point
+    drawControlPolygon(previewBezier.controlPoints, imageData.width, imageData.data, '#cccccc');
+    // Draw the curve preview
+    if (previewBezier.controlPoints.length >= 2) {
+      drawBezierCurve(previewBezier.controlPoints, imageData.width, imageData.data, previewBezier.color);
+    }
+    // Draw all control point markers
+    drawControlPointMarkers(previewBezier.controlPoints, imageData.width, imageData.data);
   }
 
   if (isRGBCubeVisible()) {
@@ -786,6 +837,13 @@ function drawCircles(bufferWidth: number, bufferData: Uint8ClampedArray){
   }
 }
 
+function drawBezierCurves(bufferWidth: number, bufferData: Uint8ClampedArray){
+  const curves = getBezierCurves();
+  for (const curve of curves) {
+    drawBezierCurve(curve.controlPoints, bufferWidth, bufferData, curve.color);
+  }
+}
+
 function drawRGBCubeToBuffer(cubeImageData: ImageData, bufferWidth: number, bufferData: Uint8ClampedArray) {
   const cubePos = getRGBCubeWorldPosition();
   const cubeSize = getRGBCubeSize();
@@ -821,7 +879,8 @@ function saveDrawing() {
   const dataToSave = {
     lines: getLines(),
     rectangles: getRectangles(),
-    circles: getCircles()
+    circles: getCircles(),
+    bezierCurves: getBezierCurves()
   };
 
   const jsonString = JSON.stringify(dataToSave, null, 2);
@@ -946,6 +1005,7 @@ function handleLoadedImage(ppmData: PpmData) {
     setLines([]);
     setRectangles([]);
     setCircles([]);
+    setBezierCurves([]);
     
     console.log("6. Image dimensions:", ppmData.width, "x", ppmData.height);
     
@@ -998,21 +1058,26 @@ function loadDrawing(jsonString: string) {
       throw new Error("Wrong JSON format");
     }
 
-    const newLines = data.lines.map((obj: any) => 
+    const newLines = data.lines.map((obj: any) =>
       new Line(obj.x1, obj.y1, obj.x2, obj.y2, obj.color)
     );
 
-    const newRects = data.rectangles.map((obj: any) => 
+    const newRects = data.rectangles.map((obj: any) =>
       new Rectangle(obj.x1, obj.y1, obj.x2, obj.y2, obj.color)
     );
 
-    const newCircles = data.circles.map((obj: any) => 
+    const newCircles = data.circles.map((obj: any) =>
       new Circle(obj.centerX, obj.centerY, obj.radius, obj.color)
+    );
+
+    const newBezierCurves = (data.bezierCurves || []).map((obj: any) =>
+      new BezierCurve(obj.controlPoints, obj.color)
     );
 
     setLines(newLines);
     setRectangles(newRects);
     setCircles(newCircles);
+    setBezierCurves(newBezierCurves);
     loadedPPMImage = null; 
     
     if (canvas && graphics && imageData) {

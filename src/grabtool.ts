@@ -3,6 +3,7 @@ import { mode } from "./state";
 import { getRectangles } from "./rectangle";
 import { getLines } from "./line";
 import { getCircles } from "./circle";
+import { getBezierCurves } from "./bezier";
 import { changePixelColor } from './pixel.ts';
 import { updatePropertiesPanel } from './properties.ts';
 import { screenToWorld } from './coords.ts';
@@ -80,6 +81,14 @@ export function setupSelection(canvas: HTMLCanvasElement) {
             for (const line of getLines().slice().reverse()) {
                 if (line.hitTest(worldX, worldY, hitThreshold)) {
                     selectedShape = line;
+                    break;
+                }
+            }
+        }
+        if (!selectedShape) {
+            for (const bezier of getBezierCurves().slice().reverse()) {
+                if (bezier.hitTest(worldX, worldY, hitThreshold)) {
+                    selectedShape = bezier;
                     break;
                 }
             }
