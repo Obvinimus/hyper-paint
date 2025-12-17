@@ -78,6 +78,15 @@ import {
     getThresholdValue
 } from './binarization.ts';
 import {
+    dilation,
+    erosion,
+    opening,
+    closing,
+    hitOrMiss,
+    thinning,
+    thickening
+} from './morphology.ts';
+import {
     setupRGBCube,
     toggleRGBCube,
     isRGBCubeVisible,
@@ -473,8 +482,8 @@ function setupPointTransforms() {
 }
 
 function setupTabSwitching() {
-  const tabs = ['RGB', 'R', 'G', 'B', 'Gray', 'Filters'];
-  const contents = ['contentRGB', 'contentR', 'contentG', 'contentB', 'contentGray', 'contentFilters'];
+  const tabs = ['RGB', 'R', 'G', 'B', 'Gray', 'Filters', 'Morphology'];
+  const contents = ['contentRGB', 'contentR', 'contentG', 'contentB', 'contentGray', 'contentFilters', 'contentMorphology'];
 
   tabs.forEach((tab, index) => {
     document.getElementById(`tab${tab}`)?.addEventListener('click', () => {
@@ -624,6 +633,135 @@ function setupBinarization() {
   });
 }
 
+// Morphological operations
+let currentStructuringElement: number[][] = [
+  [1, 1, 1],
+  [1, 1, 1],
+  [1, 1, 1]
+];
+
+function createSEGrid(size: number): void {
+  const grid = document.getElementById('seGrid');
+  if (!grid) return;
+
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+  // Initialize with all 1s
+  currentStructuringElement = [];
+  for (let y = 0; y < size; y++) {
+    currentStructuringElement[y] = [];
+    for (let x = 0; x < size; x++) {
+      currentStructuringElement[y][x] = 1;
+    }
+  }
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const cell = document.createElement('button');
+      cell.className = 'w-6 h-6 border border-gray-600 bg-white text-black text-xs font-bold';
+      cell.textContent = '1';
+      cell.dataset.x = x.toString();
+      cell.dataset.y = y.toString();
+      cell.dataset.value = '1';
+
+      cell.addEventListener('click', () => {
+        const currentVal = parseInt(cell.dataset.value || '1');
+        let newVal: number;
+
+        // Cycle: 1 -> 0 -> -1 -> 1
+        if (currentVal === 1) {
+          newVal = 0;
+          cell.className = 'w-6 h-6 border border-gray-600 bg-black text-white text-xs font-bold';
+        } else if (currentVal === 0) {
+          newVal = -1;
+          cell.className = 'w-6 h-6 border border-gray-600 bg-gray-500 text-white text-xs font-bold';
+        } else {
+          newVal = 1;
+          cell.className = 'w-6 h-6 border border-gray-600 bg-white text-black text-xs font-bold';
+        }
+
+        cell.textContent = newVal.toString();
+        cell.dataset.value = newVal.toString();
+        currentStructuringElement[y][x] = newVal;
+      });
+
+      grid.appendChild(cell);
+    }
+  }
+}
+
+function setupMorphology() {
+  // Initialize with 3x3 grid
+  createSEGrid(3);
+
+  document.getElementById('seSizeApplyBtn')?.addEventListener('click', () => {
+    const sizeInput = document.getElementById('seSize') as HTMLInputElement;
+    const size = parseInt(sizeInput.value);
+    if (size >= 1 && size <= 9) {
+      createSEGrid(size);
+    }
+  });
+
+  // Basic operations
+  document.getElementById('dilationButton')?.addEventListener('click', () => {
+    if (!loadedPPMImage) {
+      alert('Najpierw wczytaj obraz');
+      return;
+    }
+    loadedPPMImage = dilation(loadedPPMImage, currentStructuringElement);
+  });
+
+  document.getElementById('erosionButton')?.addEventListener('click', () => {
+    if (!loadedPPMImage) {
+      alert('Najpierw wczytaj obraz');
+      return;
+    }
+    loadedPPMImage = erosion(loadedPPMImage, currentStructuringElement);
+  });
+
+  document.getElementById('openingButton')?.addEventListener('click', () => {
+    if (!loadedPPMImage) {
+      alert('Najpierw wczytaj obraz');
+      return;
+    }
+    loadedPPMImage = opening(loadedPPMImage, currentStructuringElement);
+  });
+
+  document.getElementById('closingButton')?.addEventListener('click', () => {
+    if (!loadedPPMImage) {
+      alert('Najpierw wczytaj obraz');
+      return;
+    }
+    loadedPPMImage = closing(loadedPPMImage, currentStructuringElement);
+  });
+
+  // Hit-or-miss operations
+  document.getElementById('hitOrMissButton')?.addEventListener('click', () => {
+    if (!loadedPPMImage) {
+      alert('Najpierw wczytaj obraz');
+      return;
+    }
+    loadedPPMImage = hitOrMiss(loadedPPMImage, currentStructuringElement);
+  });
+
+  document.getElementById('thinningButton')?.addEventListener('click', () => {
+    if (!loadedPPMImage) {
+      alert('Najpierw wczytaj obraz');
+      return;
+    }
+    loadedPPMImage = thinning(loadedPPMImage, currentStructuringElement);
+  });
+
+  document.getElementById('thickeningButton')?.addEventListener('click', () => {
+    if (!loadedPPMImage) {
+      alert('Najpierw wczytaj obraz');
+      return;
+    }
+    loadedPPMImage = thickening(loadedPPMImage, currentStructuringElement);
+  });
+}
+
 function init() {
   canvas = document.getElementById('maincanvas') as HTMLCanvasElement;
   graphics = canvas.getContext('2d', { willReadFrequently: true });
@@ -655,6 +793,7 @@ function init() {
   setupPointTransforms();
   setupHistogram();
   setupBinarization();
+  setupMorphology();
 
   window.addEventListener('keydown', (event) => {
     if (event.key === ' ' || event.code === 'Space') {

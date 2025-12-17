@@ -110,6 +110,7 @@
                 <button id="tabB" class="px-3 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white">B</button>
                 <button id="tabGray" class="px-3 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white">Szarość</button>
                 <button id="tabFilters" class="px-3 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white">Filtry</button>
+                <button id="tabMorphology" class="px-3 py-2 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-white">Morfo</button>
             </div>
 
             <div id="contentRGB" class="space-y-3">
@@ -284,6 +285,57 @@
                         </button>
                         <button id="filtrRozmycieGaussowskieButton" class="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-sm text-left">
                             Filtr rozmycie gaussowskie<br><span class="text-xs text-gray-400">Kernel 5x5</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="contentMorphology" class="space-y-3 hidden">
+                <div class="border border-teal-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-2 text-teal-400">Element strukturyzujący</label>
+
+                    <div class="flex gap-2 mb-2">
+                        <label class="text-xs">Rozmiar:</label>
+                        <input type="number" id="seSize" min="1" max="9" value="3" class="w-12 bg-gray-700 text-white px-1 py-0.5 rounded border border-gray-600 text-center text-xs">
+                        <button id="seSizeApplyBtn" class="bg-teal-600 hover:bg-teal-700 px-2 py-0.5 rounded text-xs">Ustaw</button>
+                    </div>
+
+                    <div id="seGridContainer" class="flex justify-center mb-2">
+                        <div id="seGrid" class="inline-grid gap-0.5 bg-gray-900 p-1 rounded"></div>
+                    </div>
+
+                    <p class="text-xs text-gray-400 mb-2">Kliknij komórkę: 1 (biały) = aktywny, 0 (czarny) = nieaktywny, -1 (szary) = tło (hit-or-miss)</p>
+                </div>
+
+                <div class="border border-teal-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-2 text-teal-400">Podstawowe operacje</label>
+                    <div class="flex flex-col gap-2">
+                        <button id="dilationButton" class="bg-teal-600 hover:bg-teal-700 px-3 py-2 rounded text-sm text-left">
+                            Dylatacja<br><span class="text-xs text-gray-400">Powiększa jasne obszary</span>
+                        </button>
+                        <button id="erosionButton" class="bg-teal-600 hover:bg-teal-700 px-3 py-2 rounded text-sm text-left">
+                            Erozja<br><span class="text-xs text-gray-400">Zmniejsza jasne obszary</span>
+                        </button>
+                        <button id="openingButton" class="bg-teal-600 hover:bg-teal-700 px-3 py-2 rounded text-sm text-left">
+                            Otwarcie<br><span class="text-xs text-gray-400">Erozja + Dylatacja (usuwa szum)</span>
+                        </button>
+                        <button id="closingButton" class="bg-teal-600 hover:bg-teal-700 px-3 py-2 rounded text-sm text-left">
+                            Domknięcie<br><span class="text-xs text-gray-400">Dylatacja + Erozja (wypełnia dziury)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="border border-cyan-600 rounded p-2">
+                    <label class="block text-sm font-medium mb-2 text-cyan-400">Hit-or-Miss (pocienianie i pogrubianie)</label>
+                    <div class="flex flex-col gap-2">
+                        <button id="hitOrMissButton" class="bg-cyan-600 hover:bg-cyan-700 px-3 py-2 rounded text-sm text-left">
+                            Hit-or-Miss<br><span class="text-xs text-gray-400">Wykrywa wzorce (użyj -1 dla "nie ważne")</span>
+                        </button>
+                        <button id="thinningButton" class="bg-cyan-600 hover:bg-cyan-700 px-3 py-2 rounded text-sm text-left">
+                            Pocienianie<br><span class="text-xs text-gray-400">Zmniejsza grubość obiektów</span>
+                        </button>
+                        <button id="thickeningButton" class="bg-cyan-600 hover:bg-cyan-700 px-3 py-2 rounded text-sm text-left">
+                            Pogrubianie<br><span class="text-xs text-gray-400">Zwiększa grubość obiektów</span>
                         </button>
                     </div>
                 </div>
