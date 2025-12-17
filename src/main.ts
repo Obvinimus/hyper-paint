@@ -18,11 +18,23 @@ import {
     setBezierDegree,
     resetBezierDrawing
 } from './bezier.ts';
-import { initPropertiesPanel, updatePropertiesPanel, showRGBCubeProperties, hideRGBCubeProperties } from './properties.ts';
+import {
+    setupPolygonDrawing,
+    getPolygons,
+    setPolygons,
+    previewPolygon,
+    polygonVertices,
+    drawPolygon,
+    drawPolygonPreview,
+    drawVertexMarkers,
+    Polygon,
+    resetPolygonDrawing
+} from './polygon.ts';
+import { initPropertiesPanel, updatePropertiesPanel, showRGBCubeProperties, hideRGBCubeProperties, handleTransformCenterClick, isSettingTransformCenter } from './properties.ts';
 import { parsePPMP3, parsePPMP6 } from './ppm.ts';
 import { screenToWorld, worldToScreen } from './coords.ts';
 import type { PpmData } from './ppm.ts';
-import {mode} from './state.ts';
+import {mode, currentColor} from './state.ts';
 import { setupColorPicker } from './colorpicker.ts';
 import {
     addValue,
@@ -141,6 +153,12 @@ document.getElementById('grabTool')?.addEventListener('click', () => {
 document.getElementById('bezierTool')?.addEventListener('click', () => {
   setMode(5);
   resetBezierDrawing();
+  updatePropertiesPanel(null);
+});
+
+document.getElementById('polygonTool')?.addEventListener('click', () => {
+  setMode(6);
+  resetPolygonDrawing();
   updatePropertiesPanel(null);
 });
 
@@ -629,6 +647,7 @@ function init() {
   setupRectangleDrawing(canvas);
   setupCircleDrawing(canvas);
   setupBezierDrawing(canvas);
+  setupPolygonDrawing(canvas);
   setupSelection(canvas);
   initPropertiesPanel();
   setupColorPicker();
@@ -664,19 +683,27 @@ window.addEventListener('keyup', (event) => {
   canvas.addEventListener('mousedown', (event) => {
     if (!canvas) return;
 
-    if (isRGBCubeVisible()) {
-      const rect = canvas.getBoundingClientRect();
-      const screenX = event.clientX - rect.left;
-      const screenY = event.clientY - rect.top;
-      const [worldX, worldY] = screenToWorld(screenX, screenY);
+    const rect = canvas.getBoundingClientRect();
+    const screenX = event.clientX - rect.left;
+    const screenY = event.clientY - rect.top;
+    const [worldX, worldY] = screenToWorld(screenX, screenY);
 
+    // Handle setting transformation centers (rotation/scale point)
+    if (event.button === 0 && isSettingTransformCenter()) {
+      if (handleTransformCenterClick(worldX, worldY)) {
+        event.preventDefault();
+        return;
+      }
+    }
+
+    if (isRGBCubeVisible()) {
       const isPanTrigger = event.button === 1 || (event.button === 0 && isSpacebarPressed);
 
       if (isPanTrigger) {
         const cubeHandled = handleRGBCubePanStart(worldX, worldY);
         if (cubeHandled) {
           event.preventDefault();
-          return; 
+          return;
         }
       } else if (event.button === 0) {
         handleRGBCubeMouseDown(worldX, worldY);
@@ -737,7 +764,8 @@ function draw(){
   drawLines(imageData.width, imageData.data);
   drawRectangles(imageData.width, imageData.data);
   drawCircles(imageData.width, imageData.data);
-  drawBezierCurves(imageData.width, imageData.data); 
+  drawBezierCurves(imageData.width, imageData.data);
+  drawPolygons(imageData.width, imageData.data); 
 
   if (selectedShape && typeof selectedShape.getHandles === 'function') {
       const handles = selectedShape.getHandles();
@@ -779,6 +807,18 @@ function draw(){
     }
     // Draw all control point markers
     drawControlPointMarkers(previewBezier.controlPoints, imageData.width, imageData.data);
+  }
+
+  // Draw polygon preview during drawing
+  if (polygonVertices.length > 0) {
+    drawVertexMarkers(polygonVertices, imageData.width, imageData.data);
+    if (polygonVertices.length >= 2) {
+      drawPolygonPreview(polygonVertices, imageData.width, imageData.data, currentColor);
+    }
+  }
+  if (previewPolygon) {
+    drawPolygon(previewPolygon, imageData.width, imageData.data);
+    drawVertexMarkers(previewPolygon.vertices, imageData.width, imageData.data);
   }
 
   if (isRGBCubeVisible()) {
@@ -844,6 +884,13 @@ function drawBezierCurves(bufferWidth: number, bufferData: Uint8ClampedArray){
   }
 }
 
+function drawPolygons(bufferWidth: number, bufferData: Uint8ClampedArray){
+  const polys = getPolygons();
+  for (const poly of polys) {
+    drawPolygon(poly, bufferWidth, bufferData);
+  }
+}
+
 function drawRGBCubeToBuffer(cubeImageData: ImageData, bufferWidth: number, bufferData: Uint8ClampedArray) {
   const cubePos = getRGBCubeWorldPosition();
   const cubeSize = getRGBCubeSize();
@@ -880,7 +927,8 @@ function saveDrawing() {
     lines: getLines(),
     rectangles: getRectangles(),
     circles: getCircles(),
-    bezierCurves: getBezierCurves()
+    bezierCurves: getBezierCurves(),
+    polygons: getPolygons()
   };
 
   const jsonString = JSON.stringify(dataToSave, null, 2);
@@ -1006,6 +1054,7 @@ function handleLoadedImage(ppmData: PpmData) {
     setRectangles([]);
     setCircles([]);
     setBezierCurves([]);
+    setPolygons([]);
     
     console.log("6. Image dimensions:", ppmData.width, "x", ppmData.height);
     
@@ -1074,10 +1123,15 @@ function loadDrawing(jsonString: string) {
       new BezierCurve(obj.controlPoints, obj.color)
     );
 
+    const newPolygons = (data.polygons || []).map((obj: any) =>
+      new Polygon(obj.vertices, obj.color)
+    );
+
     setLines(newLines);
     setRectangles(newRects);
     setCircles(newCircles);
     setBezierCurves(newBezierCurves);
+    setPolygons(newPolygons);
     loadedPPMImage = null; 
     
     if (canvas && graphics && imageData) {

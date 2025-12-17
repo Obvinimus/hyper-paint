@@ -4,6 +4,7 @@ import { Line, getLines } from "./line";
 import { Rectangle, getRectangles } from "./rectangle";
 import { Circle, getCircles } from "./circle";
 import { BezierCurve, getBezierCurves, getBezierDegree, type Point } from "./bezier";
+import { Polygon, getPolygons, type Point as PolygonPoint } from "./polygon";
 import {
     setSliceEnabled,
     setSliceAxis,
@@ -16,6 +17,7 @@ let panel: HTMLElement;
 let noSelection: HTMLElement;
 let lineProps: HTMLElement, rectProps: HTMLElement, circleProps: HTMLElement, commonProps: HTMLElement;
 let bezierProps: HTMLElement;
+let polygonProps: HTMLElement;
 let rgbCubeProps: HTMLElement;
 
 let lineX1: HTMLInputElement, lineY1: HTMLInputElement, lineX2: HTMLInputElement, lineY2: HTMLInputElement;
@@ -27,6 +29,27 @@ let circleCX: HTMLInputElement, circleCY: HTMLInputElement, circleRadius: HTMLIn
 let bezierPointsContainer: HTMLElement;
 let addBezierPointBtn: HTMLButtonElement;
 let removeBezierPointBtn: HTMLButtonElement;
+
+let polygonVerticesContainer: HTMLElement;
+let addPolygonVertexBtn: HTMLButtonElement;
+let removePolygonVertexBtn: HTMLButtonElement;
+
+// Polygon transformation inputs
+let translateDx: HTMLInputElement;
+let translateDy: HTMLInputElement;
+let rotateCx: HTMLInputElement;
+let rotateCy: HTMLInputElement;
+let rotateAngle: HTMLInputElement;
+let scaleCx: HTMLInputElement;
+let scaleCy: HTMLInputElement;
+let scaleFactor: HTMLInputElement;
+
+// Mode for setting transformation points via mouse
+let settingRotateCenter = false;
+let settingScaleCenter = false;
+
+// Storage for creating new polygons from text fields
+let createPolygonVertices: PolygonPoint[] = [];
 
 let shapeColor: HTMLInputElement;
 let updateButton: HTMLButtonElement;
@@ -41,6 +64,7 @@ export function initPropertiesPanel() {
     rectProps = document.getElementById('rect-props') as HTMLElement;
     circleProps = document.getElementById('circle-props') as HTMLElement;
     bezierProps = document.getElementById('bezier-props') as HTMLElement;
+    polygonProps = document.getElementById('polygon-props') as HTMLElement;
     commonProps = document.getElementById('common-props') as HTMLElement;
     rgbCubeProps = document.getElementById('rgb-cube-props') as HTMLElement;
 
@@ -62,6 +86,20 @@ export function initPropertiesPanel() {
     addBezierPointBtn = document.getElementById('addBezierPointBtn') as HTMLButtonElement;
     removeBezierPointBtn = document.getElementById('removeBezierPointBtn') as HTMLButtonElement;
 
+    polygonVerticesContainer = document.getElementById('polygon-vertices-container') as HTMLElement;
+    addPolygonVertexBtn = document.getElementById('addPolygonVertexBtn') as HTMLButtonElement;
+    removePolygonVertexBtn = document.getElementById('removePolygonVertexBtn') as HTMLButtonElement;
+
+    // Polygon transformation inputs
+    translateDx = document.getElementById('translate-dx') as HTMLInputElement;
+    translateDy = document.getElementById('translate-dy') as HTMLInputElement;
+    rotateCx = document.getElementById('rotate-cx') as HTMLInputElement;
+    rotateCy = document.getElementById('rotate-cy') as HTMLInputElement;
+    rotateAngle = document.getElementById('rotate-angle') as HTMLInputElement;
+    scaleCx = document.getElementById('scale-cx') as HTMLInputElement;
+    scaleCy = document.getElementById('scale-cy') as HTMLInputElement;
+    scaleFactor = document.getElementById('scale-factor') as HTMLInputElement;
+
     shapeColor = document.getElementById('shape-color') as HTMLInputElement;
     updateButton = document.getElementById('updateButton') as HTMLButtonElement;
     createButton = document.getElementById('createButton') as HTMLButtonElement;
@@ -71,6 +109,7 @@ export function initPropertiesPanel() {
 
     setupRGBCubeListeners();
     setupBezierListeners();
+    setupPolygonListeners();
 }
 
 function setupRGBCubeListeners() {
@@ -127,6 +166,241 @@ function setupBezierListeners() {
             bezier.controlPoints.pop();
             renderBezierPointsUI(bezier.controlPoints);
         }
+    });
+}
+
+function setupPolygonListeners() {
+    // Add/remove vertex buttons - works both for editing and creating
+    addPolygonVertexBtn?.addEventListener('click', () => {
+        if (selectedShape && selectedShape.type === 'polygon') {
+            // Editing existing polygon
+            const polygon = selectedShape as Polygon;
+            const lastVertex = polygon.vertices[polygon.vertices.length - 1] || { x: 100, y: 100 };
+            polygon.vertices.push({ x: lastVertex.x + 20, y: lastVertex.y });
+            renderPolygonVerticesUI(polygon.vertices);
+        } else if (mode === 6) {
+            // Creating new polygon - add to createPolygonVertices
+            const lastVertex = createPolygonVertices[createPolygonVertices.length - 1] || { x: 100, y: 100 };
+            createPolygonVertices.push({ x: lastVertex.x + 20, y: lastVertex.y });
+            renderCreatePolygonVerticesUI();
+        }
+    });
+
+    removePolygonVertexBtn?.addEventListener('click', () => {
+        if (selectedShape && selectedShape.type === 'polygon') {
+            // Editing existing polygon
+            const polygon = selectedShape as Polygon;
+            if (polygon.vertices.length > 3) {
+                polygon.vertices.pop();
+                renderPolygonVerticesUI(polygon.vertices);
+            }
+        } else if (mode === 6) {
+            // Creating new polygon - remove from createPolygonVertices
+            if (createPolygonVertices.length > 3) {
+                createPolygonVertices.pop();
+                renderCreatePolygonVerticesUI();
+            }
+        }
+    });
+
+    // Translation button
+    document.getElementById('applyTranslateBtn')?.addEventListener('click', () => {
+        if (!selectedShape || selectedShape.type !== 'polygon') return;
+
+        const polygon = selectedShape as Polygon;
+        const dx = parseFloat(translateDx.value) || 0;
+        const dy = parseFloat(translateDy.value) || 0;
+
+        polygon.move(dx, dy);
+        renderPolygonVerticesUI(polygon.vertices);
+    });
+
+    // Rotation button
+    document.getElementById('applyRotateBtn')?.addEventListener('click', () => {
+        if (!selectedShape || selectedShape.type !== 'polygon') return;
+
+        const polygon = selectedShape as Polygon;
+        const cx = parseFloat(rotateCx.value);
+        const cy = parseFloat(rotateCy.value);
+        const angle = parseFloat(rotateAngle.value) || 0;
+
+        // Use centroid if no center specified
+        if (isNaN(cx) || isNaN(cy)) {
+            const centroid = polygon.getCentroid();
+            polygon.rotate(centroid.x, centroid.y, angle);
+        } else {
+            polygon.rotate(cx, cy, angle);
+        }
+        renderPolygonVerticesUI(polygon.vertices);
+    });
+
+    // Scale button
+    document.getElementById('applyScaleBtn')?.addEventListener('click', () => {
+        if (!selectedShape || selectedShape.type !== 'polygon') return;
+
+        const polygon = selectedShape as Polygon;
+        const cx = parseFloat(scaleCx.value);
+        const cy = parseFloat(scaleCy.value);
+        const factor = parseFloat(scaleFactor.value) || 1;
+
+        // Use centroid if no center specified
+        if (isNaN(cx) || isNaN(cy)) {
+            const centroid = polygon.getCentroid();
+            polygon.scale(centroid.x, centroid.y, factor);
+        } else {
+            polygon.scale(cx, cy, factor);
+        }
+        renderPolygonVerticesUI(polygon.vertices);
+    });
+
+    // Set rotation center via mouse - toggle mode, no alert
+    document.getElementById('setRotateCenterBtn')?.addEventListener('click', () => {
+        settingRotateCenter = !settingRotateCenter;
+        settingScaleCenter = false;
+        updateSetCenterButtonStyles();
+    });
+
+    // Set scale center via mouse - toggle mode, no alert
+    document.getElementById('setScaleCenterBtn')?.addEventListener('click', () => {
+        settingScaleCenter = !settingScaleCenter;
+        settingRotateCenter = false;
+        updateSetCenterButtonStyles();
+    });
+}
+
+function updateSetCenterButtonStyles() {
+    const rotateBtn = document.getElementById('setRotateCenterBtn');
+    const scaleBtn = document.getElementById('setScaleCenterBtn');
+
+    if (rotateBtn) {
+        if (settingRotateCenter) {
+            rotateBtn.textContent = 'Kliknij na canvas...';
+            rotateBtn.classList.add('bg-yellow-500');
+            rotateBtn.classList.remove('bg-green-400');
+        } else {
+            rotateBtn.textContent = 'Ustaw punkt myszka';
+            rotateBtn.classList.remove('bg-yellow-500');
+            rotateBtn.classList.add('bg-green-400');
+        }
+    }
+
+    if (scaleBtn) {
+        if (settingScaleCenter) {
+            scaleBtn.textContent = 'Kliknij na canvas...';
+            scaleBtn.classList.add('bg-yellow-500');
+            scaleBtn.classList.remove('bg-purple-400');
+        } else {
+            scaleBtn.textContent = 'Ustaw punkt myszka';
+            scaleBtn.classList.remove('bg-yellow-500');
+            scaleBtn.classList.add('bg-purple-400');
+        }
+    }
+}
+
+// Export function to handle mouse click for setting transformation centers
+export function handleTransformCenterClick(worldX: number, worldY: number): boolean {
+    if (settingRotateCenter) {
+        rotateCx.value = Math.round(worldX).toString();
+        rotateCy.value = Math.round(worldY).toString();
+        settingRotateCenter = false;
+        updateSetCenterButtonStyles();
+        return true;
+    }
+    if (settingScaleCenter) {
+        scaleCx.value = Math.round(worldX).toString();
+        scaleCy.value = Math.round(worldY).toString();
+        settingScaleCenter = false;
+        updateSetCenterButtonStyles();
+        return true;
+    }
+    return false;
+}
+
+export function isSettingTransformCenter(): boolean {
+    return settingRotateCenter || settingScaleCenter;
+}
+
+function renderPolygonVerticesUI(vertices: PolygonPoint[]) {
+    if (!polygonVerticesContainer) return;
+
+    polygonVerticesContainer.innerHTML = '';
+
+    vertices.forEach((vertex, index) => {
+        const vertexDiv = document.createElement('div');
+        vertexDiv.className = 'flex items-center gap-1 text-sm';
+
+        vertexDiv.innerHTML = `
+            <span class="w-8 font-medium">V${index}:</span>
+            <input type="number" class="polygon-vertex-x w-16 p-1 border rounded text-sm" data-index="${index}" value="${Math.round(vertex.x)}">
+            <input type="number" class="polygon-vertex-y w-16 p-1 border rounded text-sm" data-index="${index}" value="${Math.round(vertex.y)}">
+        `;
+
+        polygonVerticesContainer.appendChild(vertexDiv);
+    });
+
+    // Add event listeners for the inputs
+    polygonVerticesContainer.querySelectorAll('.polygon-vertex-x, .polygon-vertex-y').forEach(input => {
+        input.addEventListener('change', (e) => {
+            if (!selectedShape || selectedShape.type !== 'polygon') return;
+
+            const polygon = selectedShape as Polygon;
+            const target = e.target as HTMLInputElement;
+            const index = parseInt(target.dataset.index || '0');
+            const value = parseFloat(target.value);
+
+            if (!isNaN(value) && index < polygon.vertices.length) {
+                if (target.classList.contains('polygon-vertex-x')) {
+                    polygon.vertices[index].x = value;
+                } else {
+                    polygon.vertices[index].y = value;
+                }
+            }
+        });
+    });
+}
+
+function renderCreatePolygonVerticesUI() {
+    if (!polygonVerticesContainer) return;
+
+    polygonVerticesContainer.innerHTML = '';
+
+    // Initialize with default triangle
+    if (createPolygonVertices.length < 3) {
+        createPolygonVertices = [
+            { x: 100, y: 100 },
+            { x: 200, y: 100 },
+            { x: 150, y: 200 }
+        ];
+    }
+
+    createPolygonVertices.forEach((vertex, index) => {
+        const vertexDiv = document.createElement('div');
+        vertexDiv.className = 'flex items-center gap-1 text-sm';
+
+        vertexDiv.innerHTML = `
+            <span class="w-8 font-medium">V${index}:</span>
+            <input type="number" class="create-polygon-vertex-x w-16 p-1 border rounded text-sm" data-index="${index}" value="${Math.round(vertex.x)}">
+            <input type="number" class="create-polygon-vertex-y w-16 p-1 border rounded text-sm" data-index="${index}" value="${Math.round(vertex.y)}">
+        `;
+
+        polygonVerticesContainer.appendChild(vertexDiv);
+    });
+
+    // Add event listeners for the inputs
+    polygonVerticesContainer.querySelectorAll('.create-polygon-vertex-x, .create-polygon-vertex-y').forEach(input => {
+        input.addEventListener('change', (e) => {
+            const target = e.target as HTMLInputElement;
+            const index = parseInt(target.dataset.index || '0');
+            const value = parseFloat(target.value);
+
+            if (!isNaN(value) && index < createPolygonVertices.length) {
+                if (target.classList.contains('create-polygon-vertex-x')) {
+                    createPolygonVertices[index].x = value;
+                } else {
+                    createPolygonVertices[index].y = value;
+                }
+            }
+        });
     });
 }
 
@@ -230,6 +504,7 @@ export function showRGBCubeProperties() {
     rectProps.classList.add('hidden');
     circleProps.classList.add('hidden');
     bezierProps.classList.add('hidden');
+    polygonProps.classList.add('hidden');
     commonProps.classList.add('hidden');
     noSelection.classList.add('hidden');
     updateButton.classList.add('hidden');
@@ -248,6 +523,7 @@ export function updatePropertiesPanel(shape: any) {
     rectProps.classList.add('hidden');
     circleProps.classList.add('hidden');
     bezierProps.classList.add('hidden');
+    polygonProps.classList.add('hidden');
     commonProps.classList.add('hidden');
     noSelection.classList.add('hidden');
     updateButton.classList.add('hidden');
@@ -279,10 +555,19 @@ export function updatePropertiesPanel(shape: any) {
         } else if (shape.type === 'bezier') {
             bezierProps.classList.remove('hidden');
             renderBezierPointsUI(shape.controlPoints);
+        } else if (shape.type === 'polygon') {
+            polygonProps.classList.remove('hidden');
+            renderPolygonVerticesUI(shape.vertices);
+            // Set default transformation centers to centroid
+            const centroid = shape.getCentroid();
+            rotateCx.value = Math.round(centroid.x).toString();
+            rotateCy.value = Math.round(centroid.y).toString();
+            scaleCx.value = Math.round(centroid.x).toString();
+            scaleCy.value = Math.round(centroid.y).toString();
         }
         shapeColor.value = shape.color;
 
-    } else if (mode < 3 || mode === 5) {
+    } else if (mode < 3 || mode === 5 || mode === 6) {
         panel.classList.remove('translate-x-full');
         commonProps.classList.remove('hidden');
         createButton.classList.remove('hidden');
@@ -299,6 +584,9 @@ export function updatePropertiesPanel(shape: any) {
         } else if (mode === 5) {
             bezierProps.classList.remove('hidden');
             renderCreateBezierPointsUI();
+        } else if (mode === 6) {
+            polygonProps.classList.remove('hidden');
+            renderCreatePolygonVerticesUI();
         }
     } else {
         panel.classList.add('translate-x-full');
@@ -358,6 +646,28 @@ function createShapeFromProperties() {
             if (points.length >= 2) {
                 getBezierCurves().push(new BezierCurve(points, color));
                 createBezierPoints = [];
+            }
+        } else if (mode === 6) {
+            if (createPolygonVertices.length < 3) throw new Error("Error: Polygon needs at least 3 vertices.");
+
+            // Read values from inputs
+            const vertices: PolygonPoint[] = [];
+
+            for (let i = 0; i < createPolygonVertices.length; i++) {
+                const xInput = polygonVerticesContainer.querySelector(`.create-polygon-vertex-x[data-index="${i}"]`) as HTMLInputElement;
+                const yInput = polygonVerticesContainer.querySelector(`.create-polygon-vertex-y[data-index="${i}"]`) as HTMLInputElement;
+
+                if (xInput && yInput) {
+                    const x = parseFloat(xInput.value);
+                    const y = parseFloat(yInput.value);
+                    if (isNaN(x) || isNaN(y)) throw new Error("Error invalid polygon vertex.");
+                    vertices.push({ x, y });
+                }
+            }
+
+            if (vertices.length >= 3) {
+                getPolygons().push(new Polygon(vertices, color));
+                createPolygonVertices = [];
             }
         }
 
